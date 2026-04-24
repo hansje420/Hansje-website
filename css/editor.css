@@ -181,8 +181,8 @@
 }
 
 /* :only-child breaks in edit mode because the editor inserts sibling elements.
-   Use :has() to restore full-width for entries that have no year (Languages, Skills). */
-.edit-mode [data-training-list] li:not(:has(.training-year)) .training-desc {
+   JS sets data-no-year on items that have no year span (Languages, Physical Skills). */
+.edit-mode [data-training-list] li[data-no-year] .training-desc {
   grid-column: 1 / -1;
 }
 
@@ -281,13 +281,14 @@
   background: rgba(27, 92, 88, 0.05);
   border-color: rgba(27, 92, 88, 0.18);
 }
-.editor-inline-form--light input {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(27, 92, 88, 0.22);
+/* Combined selector for higher specificity — beats .editor-inline-form input */
+.editor-inline-form.editor-inline-form--light input {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(27, 92, 88, 0.25);
   color: #1C1C1A;
 }
-.editor-inline-form--light input::placeholder { color: rgba(28, 28, 26, 0.35); }
-.editor-inline-form--light input:focus { border-color: #1B5C58; }
+.editor-inline-form.editor-inline-form--light input::placeholder { color: rgba(28, 28, 26, 0.35); }
+.editor-inline-form.editor-inline-form--light input:focus { border-color: #1B5C58; }
 
 /* Remove button on light-background credit items */
 .edit-mode .credit-item .editor-remove-entry {

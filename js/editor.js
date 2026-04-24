@@ -7,7 +7,7 @@
  */
 
 // ── CONFIG ─────────────────────────────────────────────────────────────────────
-const GITHUB_OWNER  = 'Carlos-Montenegro';
+const GITHUB_OWNER  = 'hansje420';
 const GITHUB_REPO   = 'Hansje-website';
 const GITHUB_BRANCH = 'main';
 const GITHUB_FILE   = 'index.html';
@@ -273,6 +273,12 @@ function initTrainingEditor() {
 }
 
 function addTrainingItemControls(li, ul) {
+  // Mark items with no year so CSS can span the desc full-width
+  // (can't use :only-child — editor siblings break it even when position:absolute)
+  if (!li.querySelector('.training-year')) {
+    li.dataset.noYear = 'true';
+  }
+
   const handle = document.createElement('span');
   handle.className = 'editor-drag-handle-entry';
   handle.setAttribute('data-editor-ui', 'true');
@@ -320,19 +326,32 @@ function toggleAddEntryForm(ul, addBtn) {
     return;
   }
 
+  // Detect whether this list uses year spans (Education, Courses do; Languages, Skills don't)
+  const listUsesYears = !!ul.querySelector('.training-year');
+
   const form = document.createElement('div');
   form.className = 'editor-inline-form';
   form.setAttribute('data-editor-ui', 'true');
-  form.innerHTML = `
-    <input type="text" class="editor-form-year" placeholder="Year (e.g. 2026)" maxlength="12" />
-    <input type="text" class="editor-form-desc" placeholder="Description" />
-    <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
-    <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
-  `;
+
+  if (listUsesYears) {
+    form.innerHTML = `
+      <input type="text" class="editor-form-year" placeholder="Year (e.g. 2026)" maxlength="12" />
+      <input type="text" class="editor-form-desc" placeholder="Description" />
+      <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
+      <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
+    `;
+  } else {
+    form.innerHTML = `
+      <input type="text" class="editor-form-desc" placeholder="e.g. Spanish — B2 level" />
+      <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
+      <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
+    `;
+  }
 
   form.querySelector('.editor-form-cancel-btn').addEventListener('click', () => form.remove());
   form.querySelector('.editor-form-add-btn').addEventListener('click', () => {
-    const year = form.querySelector('.editor-form-year').value.trim();
+    const yearInput = form.querySelector('.editor-form-year');
+    const year = yearInput ? yearInput.value.trim() : '';
     const desc = form.querySelector('.editor-form-desc').value.trim();
     if (!desc) { form.querySelector('.editor-form-desc').focus(); return; }
 
@@ -353,7 +372,8 @@ function toggleAddEntryForm(ul, addBtn) {
   });
 
   addBtn.after(form);
-  form.querySelector('.editor-form-year').focus();
+  // Focus the first input in the form
+  form.querySelector('input').focus();
 }
 
 // ── PHOTO EDITOR ───────────────────────────────────────────────────────────────
