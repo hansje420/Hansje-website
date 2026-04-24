@@ -1,0 +1,380 @@
+/* ============================================================
+   editor.css — Hansje Görtz website inline editor
+   These styles ONLY affect edit mode and editor UI.
+   Normal visitors never see any of this.
+   ============================================================ */
+
+
+/* ── Edit toggle button ─────────────────────────────────────── */
+#editor-toggle {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9000;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1B5C58;
+  color: #F0EBE4;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+#editor-toggle:hover  { opacity: 1; transform: scale(1.1); }
+.edit-mode #editor-toggle { opacity: 0.8; background: #B87B5A; }
+.edit-mode #editor-toggle:hover { opacity: 1; }
+
+
+/* ── Toolbar ─────────────────────────────────────────────────── */
+#editor-toolbar {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8999;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  background: rgba(14, 38, 35, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border: 1px solid rgba(201, 169, 110, 0.25);
+  border-top: none;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+
+.editor-toolbar-label {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #C9A96E;
+}
+
+#editor-status {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.7rem;
+  color: rgba(240, 235, 228, 0.45);
+  min-width: 70px;
+}
+
+.editor-toolbar-btn {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.45em 1.1em;
+  border-radius: 100px;
+  min-height: 30px;
+  cursor: pointer;
+  border: 1px solid rgba(240, 235, 228, 0.25);
+  background: transparent;
+  color: rgba(240, 235, 228, 0.65);
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.editor-toolbar-btn:hover { border-color: rgba(240,235,228,0.65); color: #F0EBE4; }
+
+.editor-toolbar-btn--primary {
+  background: #C9A96E;
+  color: #0E2623;
+  border-color: #C9A96E;
+}
+.editor-toolbar-btn--primary:hover { background: #E8D5A8; border-color: #E8D5A8; }
+.editor-toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+
+/* ── Editable text elements ──────────────────────────────────── */
+.edit-mode [data-editable] {
+  outline: none;
+  border-radius: 2px;
+  cursor: text;
+  transition: box-shadow 0.15s ease;
+}
+.edit-mode [data-editable]:hover {
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.35);
+}
+.edit-mode [data-editable]:focus {
+  box-shadow: 0 0 0 2px #C9A96E;
+}
+
+
+/* ── Tag editor ──────────────────────────────────────────────── */
+.editor-remove-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: pointer;
+  border: none;
+  margin-left: 5px;
+  vertical-align: middle;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+.editor-remove-tag:hover { background: #c0392b; color: #fff; }
+
+.editor-add-tag-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+.editor-add-tag-input {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  padding: 0.35em 0.85em;
+  border: 1px dashed #1B5C58;
+  border-radius: 100px;
+  background: transparent;
+  color: #1B5C58;
+  outline: none;
+  width: 90px;
+  transition: width 0.2s ease, border-color 0.15s ease;
+}
+.editor-add-tag-input::placeholder { color: rgba(27,92,88,0.5); }
+.editor-add-tag-input:focus { width: 130px; border-style: solid; }
+
+.editor-add-tag-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid #1B5C58;
+  background: transparent;
+  color: #1B5C58;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.editor-add-tag-btn:hover { background: #1B5C58; color: #F6F1EC; }
+
+
+/* ── Training list editor ────────────────────────────────────── */
+.edit-mode [data-training-list] li {
+  position: relative;
+  padding-right: 2rem;
+}
+
+.editor-drag-handle-entry {
+  cursor: grab;
+  opacity: 0.35;
+  font-size: 0.85rem;
+  margin-right: 0.5rem;
+  user-select: none;
+  color: #C9A96E;
+  flex-shrink: 0;
+}
+.editor-drag-handle-entry:hover { opacity: 0.9; }
+.edit-mode [data-training-list] li:hover .editor-drag-handle-entry { opacity: 0.6; }
+
+.editor-remove-entry {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(240, 235, 228, 0.2);
+  color: rgba(240, 235, 228, 0.4);
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.edit-mode [data-training-list] li:hover .editor-remove-entry { opacity: 1; }
+.editor-remove-entry:hover { background: #c0392b !important; border-color: #c0392b !important; color: #fff !important; opacity: 1 !important; }
+
+[data-training-list] li.dragging  { opacity: 0.35; }
+[data-training-list] li.drag-over { border-color: #C9A96E !important; background: rgba(201,169,110,0.06); }
+
+.editor-add-entry-btn {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.5em 1.25em;
+  border: 1px dashed rgba(201, 169, 110, 0.4);
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(201, 169, 110, 0.6);
+  cursor: pointer;
+  margin-top: 0.5rem;
+  display: block;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.editor-add-entry-btn:hover { border-color: #C9A96E; color: #C9A96E; }
+
+.editor-inline-form {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(201, 169, 110, 0.07);
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+.editor-inline-form input {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.4em 0.8em;
+  background: rgba(240, 235, 228, 0.07);
+  border: 1px solid rgba(240, 235, 228, 0.2);
+  border-radius: 4px;
+  color: #F0EBE4;
+  outline: none;
+  min-height: 34px;
+}
+.editor-inline-form input::placeholder { color: rgba(240,235,228,0.3); }
+.editor-inline-form input:focus { border-color: #C9A96E; }
+.editor-form-year { width: 90px; }
+.editor-form-desc { flex: 1; min-width: 160px; }
+
+
+/* ── Photo editor ────────────────────────────────────────────── */
+.edit-mode .photo-item { position: relative; }
+
+.editor-drag-handle {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  background: rgba(14, 38, 35, 0.75);
+  border-radius: 4px;
+  color: #C9A96E;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  user-select: none;
+}
+.edit-mode .photo-item:hover .editor-drag-handle { opacity: 1; }
+
+.editor-remove-photo {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(14, 38, 35, 0.75);
+  border: 1px solid rgba(240, 235, 228, 0.3);
+  color: rgba(240, 235, 228, 0.85);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease;
+}
+.edit-mode .photo-item:hover .editor-remove-photo { opacity: 1; }
+.editor-remove-photo:hover { background: #c0392b !important; opacity: 1 !important; }
+
+.photo-item.dragging  { opacity: 0.35; cursor: grabbing; }
+.photo-item.drag-over { outline: 2px dashed #C9A96E; outline-offset: -2px; }
+
+.editor-add-photo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  border: 2px dashed rgba(201, 169, 110, 0.35);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.editor-add-photo-btn span {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(201, 169, 110, 0.6);
+  transition: color 0.2s ease;
+}
+.editor-add-photo-btn:hover { border-color: #C9A96E; background: rgba(201,169,110,0.05); }
+.editor-add-photo-btn:hover span { color: #C9A96E; }
+
+@media (max-width: 640px) {
+  .editor-add-photo-btn { min-height: 260px; }
+}
+
+
+/* ── Toast notification ──────────────────────────────────────── */
+#editor-toast {
+  position: fixed;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 9999;
+  padding: 0.7em 1.6em;
+  background: #1B5C58;
+  color: #F0EBE4;
+  border-radius: 100px;
+  font-family: 'Jost', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.editor-toast--error   { background: #c0392b; }
+.editor-toast--visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+
+/* ── Mobile toolbar adjustments ──────────────────────────────── */
+@media (max-width: 640px) {
+  #editor-toolbar {
+    left: 0;
+    right: 0;
+    transform: none;
+    border-radius: 0;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+  }
+  .editor-toolbar-label { display: none; }
+}
