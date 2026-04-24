@@ -80,6 +80,7 @@ function activateEditMode() {
   createToolbar();
   enableTextEditing();
   initTagEditor();
+  initCreditsEditor();
   initTrainingEditor();
   initPhotoEditor();
 }
@@ -178,6 +179,85 @@ function addTagRemoveButton(tag) {
   btn.title = 'Remove tag';
   btn.addEventListener('click', e => { e.stopPropagation(); tag.remove(); });
   tag.appendChild(btn);
+}
+
+// ── CREDITS EDITOR ─────────────────────────────────────────────────────────────
+function initCreditsEditor() {
+  document.querySelectorAll('.credits-list').forEach(panel => {
+    // Remove button on each existing credit item
+    panel.querySelectorAll('.credit-item').forEach(item => addCreditItemControls(item));
+
+    // "+ Add credit" button at the bottom of each panel
+    const addBtn = document.createElement('button');
+    addBtn.className = 'editor-add-entry-btn';
+    addBtn.setAttribute('data-editor-ui', 'true');
+    addBtn.textContent = '+ Add credit';
+    addBtn.addEventListener('click', () => toggleAddCreditForm(panel, addBtn));
+    panel.appendChild(addBtn);
+  });
+}
+
+function addCreditItemControls(item) {
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'editor-remove-entry';
+  removeBtn.setAttribute('data-editor-ui', 'true');
+  removeBtn.textContent = '×';
+  removeBtn.title = 'Remove credit';
+  removeBtn.style.cssText = 'position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);';
+  removeBtn.addEventListener('click', () => item.remove());
+  item.style.position = 'relative';
+  item.appendChild(removeBtn);
+}
+
+function toggleAddCreditForm(panel, addBtn) {
+  const existing = addBtn.previousElementSibling;
+  if (existing && existing.classList.contains('editor-inline-form')) {
+    existing.remove();
+    return;
+  }
+
+  const form = document.createElement('div');
+  form.className = 'editor-inline-form';
+  form.setAttribute('data-editor-ui', 'true');
+  form.innerHTML = `
+    <input type="text" class="editor-form-role" placeholder="Role (e.g. Lead — Anna)" style="flex:1;min-width:140px;" />
+    <input type="text" class="editor-form-ctitle" placeholder="Project title" style="flex:1;min-width:120px;" />
+    <input type="text" class="editor-form-details" placeholder="Director · Country · Year" style="flex:1;min-width:160px;" />
+    <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
+    <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
+  `;
+
+  form.querySelector('.editor-form-cancel-btn').addEventListener('click', () => form.remove());
+  form.querySelector('.editor-form-add-btn').addEventListener('click', () => {
+    const role    = form.querySelector('.editor-form-role').value.trim();
+    const ctitle  = form.querySelector('.editor-form-ctitle').value.trim();
+    const details = form.querySelector('.editor-form-details').value.trim();
+    if (!role && !ctitle) { form.querySelector('.editor-form-role').focus(); return; }
+
+    const item = document.createElement('div');
+    item.className = 'credit-item';
+    item.innerHTML = `
+      <span class="credit-role" data-editable>${role}</span>
+      <span class="credit-title" data-editable>${ctitle}</span>
+      <span class="credit-details" data-editable>${details}</span>
+    `;
+    panel.insertBefore(item, addBtn);
+    addCreditItemControls(item);
+    // Make new spans contenteditable
+    item.querySelectorAll('[data-editable]').forEach(el => {
+      el.contentEditable = 'true';
+      el.spellcheck = true;
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    });
+    form.remove();
+  });
+
+  form.querySelector('.editor-form-details').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); form.querySelector('.editor-form-add-btn').click(); }
+  });
+
+  addBtn.before(form);
+  form.querySelector('.editor-form-role').focus();
 }
 
 // ── TRAINING EDITOR ────────────────────────────────────────────────────────────

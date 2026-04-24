@@ -177,16 +177,19 @@
 .edit-mode [data-training-list] li {
   position: relative;
   padding-right: 2rem;
+  padding-left: 1.5rem; /* room for absolute drag handle */
 }
 
 .editor-drag-handle-entry {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   cursor: grab;
-  opacity: 0.35;
+  opacity: 0;
   font-size: 0.85rem;
-  margin-right: 0.5rem;
   user-select: none;
   color: #C9A96E;
-  flex-shrink: 0;
 }
 .editor-drag-handle-entry:hover { opacity: 0.9; }
 .edit-mode [data-training-list] li:hover .editor-drag-handle-entry { opacity: 0.6; }
@@ -212,6 +215,7 @@
   transition: opacity 0.15s ease, background 0.15s ease;
 }
 .edit-mode [data-training-list] li:hover .editor-remove-entry { opacity: 1; }
+.edit-mode .credit-item:hover .editor-remove-entry { opacity: 1; }
 .editor-remove-entry:hover { background: #c0392b !important; border-color: #c0392b !important; color: #fff !important; opacity: 1 !important; }
 
 [data-training-list] li.dragging  { opacity: 0.35; }
