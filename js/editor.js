@@ -18,6 +18,7 @@ let _editing = false;
 let _dragSrc = null;
 let _fileInput = null;
 let _authPromptOpen = false;
+let _saving = false;
 
 // ── BOOT ───────────────────────────────────────────────────────────────────────
 checkHash();
@@ -657,6 +658,9 @@ async function onFileSelected(e) {
 
 // ── SAVE & DEPLOY ──────────────────────────────────────────────────────────────
 async function saveAndDeploy() {
+  if (_saving) return;
+  _saving = true;
+
   const saveBtn = document.getElementById('editor-save-btn');
   if (saveBtn) saveBtn.disabled = true;
   setStatus('Saving…');
@@ -683,22 +687,28 @@ async function saveAndDeploy() {
     const html = '<!DOCTYPE html>\n' + clone.outerHTML;
 
     // 7. Fetch current file SHA from GitHub
-    const getRes = await fetch(
+    const getRes = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}?ref=${GITHUB_BRANCH}`,
-      { headers: { Authorization: `Bearer ${_token}` } }
+      {
+        cache: 'no-store',
+        headers: githubHeaders()
+      }
     );
     if (!getRes.ok) {
-      showToast('Could not reach GitHub — check your connection.', 'error');
+      const err = await readGitHubError(getRes);
+      setStatus('Save failed');
+      showToast('Save failed before upload: ' + err, 'error');
       return;
     }
     const { sha } = await getRes.json();
 
     // 8. Commit updated file
-    const putRes = await fetch(
+    const putRes = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`,
       {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${_token}`, 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        headers: githubHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           message: 'Content update via editor',
           content: toBase64(html),
@@ -709,8 +719,11 @@ async function saveAndDeploy() {
     );
 
     if (!putRes.ok) {
-      const err = await putRes.json();
-      showToast('Save failed: ' + (err.message || 'unknown error'), 'error');
+      const err = putRes.status === 409
+        ? 'A previous save may still be processing. Please wait a few seconds, then press Save & Deploy again.'
+        : await readGitHubError(putRes);
+      setStatus('Save failed');
+      showToast(err, 'error');
       return;
     }
 
@@ -718,9 +731,13 @@ async function saveAndDeploy() {
     showToast('Saved ✓ — Netlify is deploying (~30 seconds)');
 
   } catch (err) {
-    showToast('Error: ' + err.message, 'error');
-    setStatus('');
+    const message = err.name === 'AbortError'
+      ? 'Save took too long. Please check the connection and try again.'
+      : 'Error: ' + err.message;
+    setStatus('Save failed');
+    showToast(message, 'error');
   } finally {
+    _saving = false;
     if (saveBtn) saveBtn.disabled = false;
   }
 }
@@ -734,6 +751,35 @@ function bumpAssetVersions(clone) {
   clone.querySelectorAll('script[src^="js/"]').forEach(el => {
     el.setAttribute('src', el.getAttribute('src').split('?')[0] + `?v=${ts}`);
   });
+}
+
+function githubHeaders(extra = {}) {
+  return {
+    Authorization: `Bearer ${_token}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...extra
+  };
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function readGitHubError(res) {
+  try {
+    const err = await res.json();
+    return err.message || `GitHub returned status ${res.status}`;
+  } catch {
+    return `GitHub returned status ${res.status}`;
+  }
 }
 
 function createEditableSpan(className, text) {

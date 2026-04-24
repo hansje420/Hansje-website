@@ -245,6 +245,11 @@
   padding-left: 1.5rem; /* room for absolute drag handle */
 }
 
+.edit-mode .credit-item {
+  position: relative;
+  padding-right: 2.25rem;
+}
+
 /* :only-child breaks in edit mode because the editor inserts sibling elements.
    JS sets data-no-year on items that have no year span (Languages, Physical Skills). */
 .edit-mode [data-training-list] li[data-no-year] .training-desc {
@@ -286,7 +291,9 @@
   transition: opacity 0.15s ease, background 0.15s ease;
 }
 .edit-mode [data-training-list] li:hover .editor-remove-entry { opacity: 1; }
-.edit-mode .credit-item:hover .editor-remove-entry { opacity: 1; }
+.edit-mode .credit-item .editor-remove-entry { opacity: 0.45; }
+.edit-mode .credit-item:hover .editor-remove-entry,
+.edit-mode .credit-item .editor-remove-entry:focus-visible { opacity: 1; }
 .editor-remove-entry:hover { background: #c0392b !important; border-color: #c0392b !important; color: #fff !important; opacity: 1 !important; }
 
 [data-training-list] li.dragging  { opacity: 0.35; }
@@ -401,6 +408,9 @@
 .edit-mode .credit-item .editor-remove-entry {
   border-color: rgba(28, 28, 26, 0.2);
   color: rgba(28, 28, 26, 0.4);
+}
+.edit-mode .credit-item .editor-remove-entry:hover {
+  color: #fff;
 }
 
 
