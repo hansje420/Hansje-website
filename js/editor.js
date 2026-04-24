@@ -23,9 +23,15 @@ checkHash();
 window.addEventListener('hashchange', checkHash);
 
 function checkHash() {
-  if (window.location.hash !== '#edit') return;
   const btn = document.getElementById('editor-toggle');
   if (!btn) return;
+
+  if (window.location.hash !== '#edit') {
+    if (_editing) deactivateEditMode();
+    btn.hidden = true;
+    return;
+  }
+
   btn.hidden = false;
   _token = sessionStorage.getItem('editor_token') || null;
   btn.onclick = onEditButtonClick;
@@ -234,11 +240,11 @@ function toggleAddCreditForm(panel, addBtn) {
 
     const item = document.createElement('div');
     item.className = 'credit-item';
-    item.innerHTML = `
-      <span class="credit-role" data-editable>${role}</span>
-      <span class="credit-title" data-editable>${ctitle}</span>
-      <span class="credit-details" data-editable>${details}</span>
-    `;
+    item.append(
+      createEditableSpan('credit-role', role),
+      createEditableSpan('credit-title', ctitle),
+      createEditableSpan('credit-details', details)
+    );
     panel.insertBefore(item, addBtn);
     addCreditItemControls(item);
     // Make new spans contenteditable
@@ -326,8 +332,10 @@ function toggleAddEntryForm(ul, addBtn) {
     return;
   }
 
-  // Detect whether this list uses year spans (Education, Courses do; Languages, Skills don't)
-  const listUsesYears = !!ul.querySelector('.training-year');
+  // Education/Courses use year + description; Languages/Physical Skills use one field.
+  const listUsesYears = ul.dataset.trainingEntryType
+    ? ul.dataset.trainingEntryType === 'dated'
+    : !!ul.querySelector('.training-year');
 
   const form = document.createElement('div');
   form.className = 'editor-inline-form';
@@ -357,9 +365,12 @@ function toggleAddEntryForm(ul, addBtn) {
 
     const li = document.createElement('li');
     if (year) {
-      li.innerHTML = `<span class="training-year" data-editable>${year}</span><span class="training-desc" data-editable>${desc}</span>`;
+      li.append(
+        createEditableSpan('training-year', year),
+        createEditableSpan('training-desc', desc)
+      );
     } else {
-      li.innerHTML = `<span class="training-desc" data-editable>${desc}</span>`;
+      li.append(createEditableSpan('training-desc', desc));
     }
     ul.appendChild(li);
     addTrainingItemControls(li, ul);
@@ -513,7 +524,7 @@ async function saveAndDeploy() {
     clone.querySelectorAll('[data-editor-ui]').forEach(el => el.remove());
 
     // 3. Remove edit-mode state
-    clone.querySelector('body').classList.remove('edit-mode');
+    resetRuntimeState(clone);
     clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
     clone.querySelectorAll('[draggable]').forEach(el => el.removeAttribute('draggable'));
 
@@ -581,6 +592,59 @@ function bumpAssetVersions(clone) {
   });
   clone.querySelectorAll('script[src^="js/"]').forEach(el => {
     el.setAttribute('src', el.getAttribute('src').split('?')[0] + `?v=${ts}`);
+  });
+}
+
+function createEditableSpan(className, text) {
+  const span = document.createElement('span');
+  span.className = className;
+  span.dataset.editable = '';
+  span.textContent = text;
+  return span;
+}
+
+function resetRuntimeState(clone) {
+  const body = clone.querySelector('body');
+  if (body) {
+    body.classList.remove('edit-mode');
+    body.style.overflow = '';
+  }
+
+  const header = clone.querySelector('#site-header');
+  if (header) header.classList.remove('scrolled');
+
+  const hamburger = clone.querySelector('.hamburger');
+  if (hamburger) {
+    hamburger.classList.remove('is-open');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  const mobileNav = clone.querySelector('#mobile-nav');
+  if (mobileNav) {
+    mobileNav.classList.remove('is-open');
+    mobileNav.setAttribute('aria-hidden', 'true');
+  }
+
+  const lightbox = clone.querySelector('#lightbox');
+  if (lightbox) {
+    lightbox.classList.remove('is-open');
+    lightbox.setAttribute('aria-hidden', 'true');
+  }
+
+  clone.querySelectorAll('.fade-target, .is-visible, .dragging, .drag-over').forEach(el => {
+    el.classList.remove('fade-target', 'is-visible', 'dragging', 'drag-over');
+  });
+
+  clone.querySelectorAll('.credits-list').forEach(panel => {
+    const isFilm = panel.id === 'tab-film';
+    panel.classList.toggle('credits-list--active', isFilm);
+    panel.hidden = !isFilm;
+  });
+
+  clone.querySelectorAll('.tab-btn').forEach(btn => {
+    const isFilm = btn.dataset.tab === 'film';
+    btn.classList.toggle('tab-btn--active', isFilm);
+    btn.setAttribute('aria-selected', isFilm ? 'true' : 'false');
   });
 }
 

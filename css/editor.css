@@ -26,6 +26,7 @@
   justify-content: center;
   box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
+#editor-toggle[hidden] { display: none; }
 #editor-toggle:hover  { opacity: 1; transform: scale(1.1); }
 .edit-mode #editor-toggle { opacity: 0.8; background: #B87B5A; }
 .edit-mode #editor-toggle:hover { opacity: 1; }
