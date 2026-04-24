@@ -4,34 +4,6 @@
    Normal visitors never see any of this.
    ============================================================ */
 
-
-/* ── Edit toggle button ─────────────────────────────────────── */
-#editor-toggle {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 9000;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #1B5C58;
-  color: #F0EBE4;
-  font-size: 1rem;
-  border: none;
-  cursor: pointer;
-  opacity: 0.45;
-  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-}
-#editor-toggle[hidden] { display: none; }
-#editor-toggle:hover  { opacity: 1; transform: scale(1.1); }
-.edit-mode #editor-toggle { opacity: 0.8; background: #B87B5A; }
-.edit-mode #editor-toggle:hover { opacity: 1; }
-
-
 /* ── Toolbar ─────────────────────────────────────────────────── */
 #editor-toolbar {
   position: fixed;
@@ -94,6 +66,98 @@
 }
 .editor-toolbar-btn--primary:hover { background: #E8D5A8; border-color: #E8D5A8; }
 .editor-toolbar-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+/* ── Password prompt ─────────────────────────────────────────── */
+#editor-password-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(14, 38, 35, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.editor-password-card {
+  width: min(100%, 420px);
+  padding: 1.5rem;
+  background: #F6F1EC;
+  border: 1px solid rgba(201, 169, 110, 0.45);
+  border-radius: 8px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+.editor-password-label {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #B87B5A;
+  margin-bottom: 0.45rem;
+}
+
+.editor-password-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  color: #1B5C58;
+  margin-bottom: 0.45rem;
+}
+
+.editor-password-help,
+.editor-password-status {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(28, 28, 26, 0.68);
+}
+
+.editor-password-input {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 1rem;
+  padding: 0.55em 0.75em;
+  border: 1px solid rgba(27, 92, 88, 0.24);
+  border-radius: 4px;
+  background: #fff;
+  color: #1C1C1A;
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  outline: none;
+}
+
+.editor-password-input:focus { border-color: #1B5C58; }
+
+.editor-password-status {
+  min-height: 1.2em;
+  margin-top: 0.55rem;
+  color: #B87B5A;
+}
+
+.editor-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.editor-password-card .editor-toolbar-btn {
+  border-color: rgba(27, 92, 88, 0.22);
+  color: #1B5C58;
+}
+
+.editor-password-card .editor-toolbar-btn--primary {
+  background: #1B5C58;
+  border-color: #1B5C58;
+  color: #F6F1EC;
+}
+
+.editor-password-card .editor-toolbar-btn--primary:hover {
+  background: #0E2623;
+  border-color: #0E2623;
+}
 
 
 /* ── Editable text elements ──────────────────────────────────── */
@@ -246,6 +310,11 @@
 }
 .editor-add-entry-btn:hover { border-color: #C9A96E; color: #C9A96E; }
 
+.editor-add-showreel-btn {
+  margin-inline: auto;
+  margin-top: 1rem;
+}
+
 .editor-inline-form {
   display: flex;
   gap: 0.5rem;
@@ -276,6 +345,43 @@
 .editor-form-role    { flex: 1; min-width: 130px; }
 .editor-form-ctitle  { flex: 1; min-width: 110px; }
 .editor-form-details { flex: 1; min-width: 150px; }
+.editor-form-reel-title { flex: 1; min-width: 180px; }
+.editor-form-reel-url   { flex: 2; min-width: 240px; }
+
+/* ── Showreel editor ─────────────────────────────────────────── */
+.edit-mode .showreel-item {
+  padding: 0.75rem;
+  border: 1px dashed rgba(201, 169, 110, 0.25);
+  border-radius: 6px;
+}
+
+.editor-showreel-form {
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+.editor-remove-showreel {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 12;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(14, 38, 35, 0.78);
+  border: 1px solid rgba(240, 235, 228, 0.3);
+  color: rgba(240, 235, 228, 0.85);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease;
+}
+.edit-mode .showreel-item:hover .editor-remove-showreel { opacity: 1; }
+.editor-remove-showreel:hover { background: #c0392b !important; opacity: 1 !important; }
 
 /* ── Light-background form variant (credits section) ─────────── */
 .editor-inline-form--light {

@@ -17,74 +17,123 @@ let _token   = null;
 let _editing = false;
 let _dragSrc = null;
 let _fileInput = null;
+let _authPromptOpen = false;
 
 // ── BOOT ───────────────────────────────────────────────────────────────────────
 checkHash();
 window.addEventListener('hashchange', checkHash);
 
 function checkHash() {
-  const btn = document.getElementById('editor-toggle');
-  if (!btn) return;
-
   if (window.location.hash !== '#edit') {
     if (_editing) deactivateEditMode();
-    btn.hidden = true;
     return;
   }
 
-  btn.hidden = false;
   _token = sessionStorage.getItem('editor_token') || null;
-  btn.onclick = onEditButtonClick;
+  requestEditAccess();
 }
 
-// ── AUTH + TOGGLE ──────────────────────────────────────────────────────────────
-async function onEditButtonClick() {
-  if (_editing) {
-    deactivateEditMode();
-    return;
-  }
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function requestEditAccess() {
+  if (_editing || _authPromptOpen) return;
 
   if (!_token) {
-    const raw = window.prompt(
-      'Enter your GitHub Personal Access Token to enable editing:\n' +
-      '(Requires Contents: write permission on the Hansje-website repo)'
-    );
+    _authPromptOpen = true;
+    const raw = await openEditingPasswordDialog();
+    _authPromptOpen = false;
     if (!raw || !raw.trim()) return;
-    const t = raw.trim();
-
-    setStatus('Verifying token…');
-    try {
-      const res = await fetch('https://api.github.com/user', {
-        headers: { Authorization: `Bearer ${t}` }
-      });
-      if (!res.ok) {
-        window.alert('Invalid token — please check and try again.');
-        setStatus('');
-        return;
-      }
-      _token = t;
-      sessionStorage.setItem('editor_token', _token);
-      setStatus('');
-    } catch {
-      window.alert('Could not connect to GitHub. Check your internet connection.');
-      setStatus('');
-      return;
-    }
+    _token = raw.trim();
+    sessionStorage.setItem('editor_token', _token);
   }
 
   activateEditMode();
 }
 
+function openEditingPasswordDialog() {
+  return new Promise(resolve => {
+    const existing = document.getElementById('editor-password-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'editor-password-modal';
+    modal.setAttribute('data-editor-ui', 'true');
+    modal.innerHTML = `
+      <form class="editor-password-card">
+        <p class="editor-password-label">Website Editor</p>
+        <h2 class="editor-password-title">Enter editing password</h2>
+        <p class="editor-password-help">Use the private editing password provided for this website.</p>
+        <input class="editor-password-input" type="password" autocomplete="off" spellcheck="false" placeholder="Editing password" />
+        <p class="editor-password-status" aria-live="polite"></p>
+        <div class="editor-password-actions">
+          <button type="button" class="editor-toolbar-btn editor-password-cancel">Cancel</button>
+          <button type="submit" class="editor-toolbar-btn editor-toolbar-btn--primary editor-password-submit">Continue</button>
+        </div>
+      </form>
+    `;
+
+    document.body.appendChild(modal);
+
+    const form = modal.querySelector('form');
+    const input = modal.querySelector('.editor-password-input');
+    const status = modal.querySelector('.editor-password-status');
+    const submitBtn = modal.querySelector('.editor-password-submit');
+    const cancelBtn = modal.querySelector('.editor-password-cancel');
+
+    const close = value => {
+      modal.remove();
+      resolve(value);
+    };
+
+    cancelBtn.addEventListener('click', () => close(null));
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const candidate = input.value.trim();
+      if (!candidate) {
+        status.textContent = 'Please enter the editing password.';
+        input.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+      status.textContent = 'Checking password...';
+
+      try {
+        const res = await fetch('https://api.github.com/user', {
+          headers: { Authorization: `Bearer ${candidate}` }
+        });
+
+        if (!res.ok) {
+          status.textContent = 'That password did not work. Please check it and try again.';
+          submitBtn.disabled = false;
+          cancelBtn.disabled = false;
+          input.focus();
+          input.select();
+          return;
+        }
+
+        close(candidate);
+      } catch {
+        status.textContent = 'Could not connect to the editor service. Check the internet connection and try again.';
+        submitBtn.disabled = false;
+        cancelBtn.disabled = false;
+      }
+    });
+
+    input.focus();
+  });
+}
+
 // ── ACTIVATE ───────────────────────────────────────────────────────────────────
 function activateEditMode() {
+  if (_editing) return;
   _editing = true;
   document.body.classList.add('edit-mode');
 
-  const btn = document.getElementById('editor-toggle');
-  if (btn) { btn.textContent = '✕'; btn.title = 'Exit edit mode'; }
-
   createToolbar();
   enableTextEditing();
+  initShowreelEditor();
   initTagEditor();
   initCreditsEditor();
   initTrainingEditor();
@@ -96,13 +145,17 @@ function deactivateEditMode() {
   _editing = false;
   document.body.classList.remove('edit-mode');
 
-  const btn = document.getElementById('editor-toggle');
-  if (btn) { btn.textContent = '✏'; btn.title = 'Edit page'; }
-
   document.querySelectorAll('[data-editor-ui]').forEach(el => el.remove());
   document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
   document.querySelectorAll('.photo-item[draggable]').forEach(el => el.removeAttribute('draggable'));
   document.querySelectorAll('[data-training-list] li[draggable]').forEach(el => el.removeAttribute('draggable'));
+}
+
+function exitEditMode() {
+  deactivateEditMode();
+  if (window.location.hash === '#edit') {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
 }
 
 // ── TOOLBAR ────────────────────────────────────────────────────────────────────
@@ -118,7 +171,7 @@ function createToolbar() {
   `;
   document.body.appendChild(toolbar);
   document.getElementById('editor-save-btn').addEventListener('click', saveAndDeploy);
-  document.getElementById('editor-exit-btn').addEventListener('click', deactivateEditMode);
+  document.getElementById('editor-exit-btn').addEventListener('click', exitEditMode);
 }
 
 // ── TEXT EDITING ───────────────────────────────────────────────────────────────
@@ -133,6 +186,98 @@ function enableTextEditing() {
       });
     }
   });
+}
+
+// ── SHOWREEL EDITOR ───────────────────────────────────────────────────────────
+function initShowreelEditor() {
+  const list = document.querySelector('[data-showreel-list]');
+  if (!list) return;
+
+  list.querySelectorAll('.showreel-item').forEach(item => addShowreelItemControls(item, list));
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'editor-add-entry-btn editor-add-showreel-btn';
+  addBtn.setAttribute('data-editor-ui', 'true');
+  addBtn.textContent = '+ Add showreel';
+  addBtn.addEventListener('click', () => toggleAddShowreelForm(list, addBtn));
+  list.after(addBtn);
+}
+
+function addShowreelItemControls(item, list) {
+  if (item.querySelector('.editor-remove-showreel')) return;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'editor-remove-showreel';
+  removeBtn.setAttribute('data-editor-ui', 'true');
+  removeBtn.textContent = '×';
+  removeBtn.title = 'Remove showreel';
+  removeBtn.addEventListener('click', () => item.remove());
+  item.appendChild(removeBtn);
+}
+
+function toggleAddShowreelForm(list, addBtn) {
+  const existing = addBtn.nextElementSibling;
+  if (existing && existing.classList.contains('editor-inline-form')) {
+    existing.remove();
+    return;
+  }
+
+  const form = document.createElement('div');
+  form.className = 'editor-inline-form editor-showreel-form';
+  form.setAttribute('data-editor-ui', 'true');
+  form.innerHTML = `
+    <input type="text" class="editor-form-reel-title" placeholder="Title (e.g. Commercial Showreel)" />
+    <input type="url" class="editor-form-reel-url" placeholder="YouTube URL" />
+    <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
+    <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
+  `;
+
+  form.querySelector('.editor-form-cancel-btn').addEventListener('click', () => form.remove());
+  form.querySelector('.editor-form-add-btn').addEventListener('click', () => {
+    const title = form.querySelector('.editor-form-reel-title').value.trim() || 'Showreel';
+    const url = form.querySelector('.editor-form-reel-url').value.trim();
+    const embedUrl = toYouTubeEmbedUrl(url);
+
+    if (!embedUrl) {
+      showToast('Please add a valid YouTube URL.', 'error');
+      form.querySelector('.editor-form-reel-url').focus();
+      return;
+    }
+
+    const item = document.createElement('div');
+    item.className = 'showreel-item';
+
+    const heading = createEditableSpan('showreel-title', title);
+    heading.dataset.editable = '';
+
+    const videoWrap = document.createElement('div');
+    videoWrap.className = 'video-wrap';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = embedUrl;
+    iframe.title = `Hansje Görtz — ${title}`;
+    iframe.frameBorder = '0';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.loading = 'lazy';
+
+    videoWrap.appendChild(iframe);
+    item.append(heading, videoWrap);
+    list.appendChild(item);
+    addShowreelItemControls(item, list);
+
+    heading.contentEditable = 'true';
+    heading.spellcheck = true;
+    heading.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    form.remove();
+  });
+
+  form.querySelector('.editor-form-reel-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); form.querySelector('.editor-form-add-btn').click(); }
+  });
+
+  addBtn.after(form);
+  form.querySelector('.editor-form-reel-title').focus();
 }
 
 // ── TAG EDITOR ─────────────────────────────────────────────────────────────────
@@ -528,20 +673,16 @@ async function saveAndDeploy() {
     clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
     clone.querySelectorAll('[draggable]').forEach(el => el.removeAttribute('draggable'));
 
-    // 4. Hide the edit toggle button
-    const toggleBtn = clone.querySelector('#editor-toggle');
-    if (toggleBtn) toggleBtn.hidden = true;
-
-    // 5. Update photo data-index values
+    // 4. Update photo data-index values
     clone.querySelectorAll('.photo-item').forEach((p, i) => { p.dataset.index = i; });
 
-    // 6. Bump cache-busting version on local assets
+    // 5. Bump cache-busting version on local assets
     bumpAssetVersions(clone);
 
-    // 7. Serialise to clean HTML string
+    // 6. Serialise to clean HTML string
     const html = '<!DOCTYPE html>\n' + clone.outerHTML;
 
-    // 8. Fetch current file SHA from GitHub
+    // 7. Fetch current file SHA from GitHub
     const getRes = await fetch(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}?ref=${GITHUB_BRANCH}`,
       { headers: { Authorization: `Bearer ${_token}` } }
@@ -552,7 +693,7 @@ async function saveAndDeploy() {
     }
     const { sha } = await getRes.json();
 
-    // 9. Commit updated file
+    // 8. Commit updated file
     const putRes = await fetch(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`,
       {
@@ -596,11 +737,34 @@ function bumpAssetVersions(clone) {
 }
 
 function createEditableSpan(className, text) {
-  const span = document.createElement('span');
+  const span = className === 'showreel-title' ? document.createElement('h3') : document.createElement('span');
   span.className = className;
   span.dataset.editable = '';
   span.textContent = text;
   return span;
+}
+
+function toYouTubeEmbedUrl(url) {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, '');
+    let id = '';
+
+    if (host === 'youtu.be') {
+      id = parsed.pathname.split('/').filter(Boolean)[0] || '';
+    } else if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (parsed.pathname === '/watch') id = parsed.searchParams.get('v') || '';
+      else if (parsed.pathname.startsWith('/embed/')) id = parsed.pathname.split('/')[2] || '';
+      else if (parsed.pathname.startsWith('/shorts/')) id = parsed.pathname.split('/')[2] || '';
+    }
+
+    if (!/^[a-zA-Z0-9_-]{6,}$/.test(id)) return null;
+    return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+  } catch {
+    return null;
+  }
 }
 
 function resetRuntimeState(clone) {

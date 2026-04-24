@@ -503,6 +503,25 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   z-index: 1;
 }
 
+.showreel-list {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.showreel-item {
+  position: relative;
+}
+
+.showreel-title {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-champagne);
+  margin-bottom: var(--space-sm);
+}
+
 .video-wrap {
   position: relative;
   width: 100%;
