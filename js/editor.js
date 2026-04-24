@@ -203,9 +203,7 @@ function addCreditItemControls(item) {
   removeBtn.setAttribute('data-editor-ui', 'true');
   removeBtn.textContent = '×';
   removeBtn.title = 'Remove credit';
-  removeBtn.style.cssText = 'position:absolute;right:0.25rem;top:50%;transform:translateY(-50%);';
   removeBtn.addEventListener('click', () => item.remove());
-  item.style.position = 'relative';
   item.appendChild(removeBtn);
 }
 
@@ -217,12 +215,12 @@ function toggleAddCreditForm(panel, addBtn) {
   }
 
   const form = document.createElement('div');
-  form.className = 'editor-inline-form';
+  form.className = 'editor-inline-form editor-inline-form--light';
   form.setAttribute('data-editor-ui', 'true');
   form.innerHTML = `
-    <input type="text" class="editor-form-role" placeholder="Role (e.g. Lead — Anna)" style="flex:1;min-width:140px;" />
-    <input type="text" class="editor-form-ctitle" placeholder="Project title" style="flex:1;min-width:120px;" />
-    <input type="text" class="editor-form-details" placeholder="Director · Country · Year" style="flex:1;min-width:160px;" />
+    <input type="text" class="editor-form-role" placeholder="Role (e.g. Lead — Anna)" />
+    <input type="text" class="editor-form-ctitle" placeholder="Project title" />
+    <input type="text" class="editor-form-details" placeholder="Director · Country · Year" />
     <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
     <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
   `;
