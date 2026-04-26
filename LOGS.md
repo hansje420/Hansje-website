@@ -16,6 +16,14 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.4 — April 2026
+
+### Updates
+- **Cache busting** — Bumped CSS and JS asset versions to `v=1.4`, including editor files.
+- **Agent guidance** — Added `CLAUDE.md` with project context and concise log-update rules.
+
+---
+
 ## Version 1.3 — April 2026
 
 ### Inline editor

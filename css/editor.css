@@ -248,6 +248,7 @@
 .edit-mode .credit-item {
   position: relative;
   padding-right: 2.25rem;
+  padding-left: 1.5rem;
 }
 
 /* :only-child breaks in edit mode because the editor inserts sibling elements.
@@ -269,6 +270,7 @@
 }
 .editor-drag-handle-entry:hover { opacity: 0.9; }
 .edit-mode [data-training-list] li:hover .editor-drag-handle-entry { opacity: 0.6; }
+.edit-mode .credit-item:hover .editor-drag-handle-entry { opacity: 0.6; }
 
 .editor-remove-entry {
   position: absolute;
@@ -298,6 +300,8 @@
 
 [data-training-list] li.dragging  { opacity: 0.35; }
 [data-training-list] li.drag-over { border-color: #C9A96E !important; background: rgba(201,169,110,0.06); }
+.credit-item.dragging  { opacity: 0.35; }
+.credit-item.drag-over { border-top: 2px solid #C9A96E !important; }
 
 .editor-add-entry-btn {
   font-family: 'Jost', sans-serif;

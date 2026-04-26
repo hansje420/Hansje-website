@@ -350,6 +350,15 @@ function initCreditsEditor() {
 }
 
 function addCreditItemControls(item) {
+  const panel = item.closest('.credits-list');
+
+  const handle = document.createElement('span');
+  handle.className = 'editor-drag-handle-entry';
+  handle.setAttribute('data-editor-ui', 'true');
+  handle.textContent = '⠿';
+  handle.title = 'Drag to reorder';
+  item.prepend(handle);
+
   const removeBtn = document.createElement('button');
   removeBtn.className = 'editor-remove-entry';
   removeBtn.setAttribute('data-editor-ui', 'true');
@@ -357,6 +366,30 @@ function addCreditItemControls(item) {
   removeBtn.title = 'Remove credit';
   removeBtn.addEventListener('click', () => item.remove());
   item.appendChild(removeBtn);
+
+  item.draggable = true;
+  item.addEventListener('dragstart', e => {
+    _dragSrc = item;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => item.classList.add('dragging'), 0);
+  });
+  item.addEventListener('dragend', () => {
+    item.classList.remove('dragging');
+    panel.querySelectorAll('.credit-item').forEach(el => el.classList.remove('drag-over'));
+    _dragSrc = null;
+  });
+  item.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+  item.addEventListener('dragenter', () => item.classList.add('drag-over'));
+  item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+  item.addEventListener('drop', e => {
+    e.stopPropagation();
+    if (_dragSrc && _dragSrc !== item) {
+      const items = [...panel.querySelectorAll('.credit-item')];
+      if (items.indexOf(_dragSrc) < items.indexOf(item)) item.after(_dragSrc);
+      else item.before(_dragSrc);
+    }
+    item.classList.remove('drag-over');
+  });
 }
 
 function toggleAddCreditForm(panel, addBtn) {
