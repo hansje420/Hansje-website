@@ -19,6 +19,7 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 ## Version 1.5 — May 2026
 
 ### Fixes
+- **Hero CTA hover** — Locked the ghost button hover, focus, and visited text color so the Spotlight link cannot fall back to browser-blue styling.
 - **Image cache recovery** — Added fresh version query strings to local image URLs so browsers with stale or cached failed image responses fetch the current files.
 - **Editor cache busting** — Extended the editor save flow to bump local image URLs as well as CSS and JS.
 - **Netlify image headers** — Removed immutable one-year caching from `/images/*` so failed image responses are not kept for returning visitors.
