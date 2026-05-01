@@ -22,7 +22,7 @@ The site is deployed on Netlify from this repository and is served as plain HTML
 - Keep the site lightweight and dependency-free unless the user explicitly asks otherwise.
 - Preserve the existing visual tone: elegant, cinematic, actor portfolio, image-led, refined typography.
 - The hidden editor is available at `/#edit`; changes there can update editable content and commit through GitHub.
-- Netlify caches CSS, JS, and images for a long time. If `css/style.css` or `js/main.js` changes, update the version query strings in `index.html` unless the editor save flow already does it.
+- Netlify caches CSS and JS for a long time. The editor save flow updates version query strings for CSS, JS, and local image URLs so returning visitors fetch the latest files.
 - Keep accessibility in mind for navigation, tabs, forms, lightbox, and keyboard behavior.
 
 ## Change Log Rule

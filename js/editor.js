@@ -784,6 +784,12 @@ function bumpAssetVersions(clone) {
   clone.querySelectorAll('script[src^="js/"]').forEach(el => {
     el.setAttribute('src', el.getAttribute('src').split('?')[0] + `?v=${ts}`);
   });
+  clone.querySelectorAll('img[src^="images/"], img[src^="https://hansjegortz.com/images/"]').forEach(el => {
+    el.setAttribute('src', el.getAttribute('src').split('?')[0] + `?v=${ts}`);
+  });
+  clone.querySelectorAll('meta[content^="images/"], meta[content^="https://hansjegortz.com/images/"]').forEach(el => {
+    el.setAttribute('content', el.getAttribute('content').split('?')[0] + `?v=${ts}`);
+  });
 }
 
 function githubHeaders(extra = {}) {
