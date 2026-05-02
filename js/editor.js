@@ -139,6 +139,96 @@ function activateEditMode() {
   initCreditsEditor();
   initTrainingEditor();
   initPhotoEditor();
+  initContactBlocksEditor();
+}
+
+// ── CONTACT BLOCKS EDITOR ─────────────────────────────────────────────────────
+function initContactBlocksEditor() {
+  const container = document.querySelector('[data-contact-blocks]');
+  if (!container) return;
+
+  container.querySelectorAll('.contact-block').forEach(block => addContactBlockControls(block));
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'editor-add-entry-btn editor-add-contact-block-btn';
+  addBtn.setAttribute('data-editor-ui', 'true');
+  addBtn.textContent = '+ Add block';
+  addBtn.addEventListener('click', () => addContactBlock(container));
+  container.after(addBtn);
+}
+
+function addContactBlockControls(block) {
+  block.querySelectorAll('.contact-block__email').forEach(link => {
+    link.classList.add('editor-email-editable');
+    link.addEventListener('click', onContactEmailClick);
+  });
+
+  if (block.querySelector('.editor-remove-contact-block')) return;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'editor-remove-contact-block';
+  removeBtn.setAttribute('data-editor-ui', 'true');
+  removeBtn.textContent = '×';
+  removeBtn.title = 'Remove block';
+  removeBtn.addEventListener('click', () => block.remove());
+  block.appendChild(removeBtn);
+}
+
+function addContactBlock(container) {
+  const block = document.createElement('div');
+  block.className = 'contact-block';
+
+  const label = document.createElement('p');
+  label.className = 'contact-block__label';
+  label.dataset.editable = '';
+  label.spellcheck = true;
+  label.textContent = 'New Block';
+
+  const name = document.createElement('p');
+  name.className = 'contact-block__primary';
+  name.dataset.editable = '';
+  name.spellcheck = true;
+  name.textContent = 'Name';
+
+  const email = document.createElement('a');
+  email.className = 'contact-block__email';
+  email.href = 'mailto:email@example.com';
+  email.textContent = 'email@example.com';
+
+  block.append(label, name, email);
+  container.appendChild(block);
+
+  [label, name].forEach(el => {
+    el.contentEditable = 'true';
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+  });
+
+  addContactBlockControls(block);
+}
+
+function onContactEmailClick(e) {
+  if (!_editing) return;
+  e.preventDefault();
+
+  const link = e.currentTarget;
+  const current = link.textContent.trim();
+
+  const next = window.prompt('Edit email address:', current);
+  if (next === null) return;
+
+  const trimmed = next.trim();
+  if (!trimmed) {
+    showToast('Email cannot be empty.', 'error');
+    return;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    showToast('Please enter a valid email address.', 'error');
+    return;
+  }
+
+  link.textContent = trimmed;
+  link.setAttribute('href', `mailto:${trimmed}`);
 }
 
 // ── DEACTIVATE ─────────────────────────────────────────────────────────────────
@@ -150,6 +240,10 @@ function deactivateEditMode() {
   document.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
   document.querySelectorAll('.photo-item[draggable]').forEach(el => el.removeAttribute('draggable'));
   document.querySelectorAll('[data-training-list] li[draggable]').forEach(el => el.removeAttribute('draggable'));
+  document.querySelectorAll('.contact-block__email.editor-email-editable').forEach(el => {
+    el.classList.remove('editor-email-editable');
+    el.removeEventListener('click', onContactEmailClick);
+  });
 }
 
 function exitEditMode() {
@@ -709,6 +803,7 @@ async function saveAndDeploy() {
     resetRuntimeState(clone);
     clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
     clone.querySelectorAll('[draggable]').forEach(el => el.removeAttribute('draggable'));
+    clone.querySelectorAll('.editor-email-editable').forEach(el => el.classList.remove('editor-email-editable'));
 
     // 4. Update photo data-index values
     clone.querySelectorAll('.photo-item').forEach((p, i) => { p.dataset.index = i; });

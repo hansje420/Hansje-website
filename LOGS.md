@@ -18,6 +18,11 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ## Version 1.5 — May 2026
 
+### Updates
+- **Contact** — Split contact details into two parallel blocks: "Representation" (agent name + email) and "Direct" (Hansje Görtz + existing email). Stacks on mobile.
+- **Editor** — Made the new contact block emails editable: click in `/#edit` to update both the displayed text and the `mailto:` link, with format validation.
+- **Editor** — Added "+ Add block" and per-block remove buttons under the contact blocks so future agencies/contacts can be added or removed without code. Layout uses flex wrap so any row with leftover items stays centered.
+
 ### Fixes
 - **Hero CTA hover** — Locked the ghost button hover, focus, and visited text color so the Spotlight link cannot fall back to browser-blue styling.
 - **Image cache recovery** — Added fresh version query strings to local image URLs so browsers with stale or cached failed image responses fetch the current files.

@@ -174,6 +174,45 @@
   box-shadow: 0 0 0 2px #C9A96E;
 }
 
+.edit-mode .contact-block__email.editor-email-editable {
+  cursor: pointer;
+  border-radius: 2px;
+  transition: box-shadow 0.15s ease;
+}
+.edit-mode .contact-block__email.editor-email-editable:hover {
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.35);
+}
+
+.edit-mode .contact-block { padding-top: 1.5rem; }
+.editor-remove-contact-block {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+  border: 1px solid rgba(201, 169, 110, 0.5);
+  border-radius: 50%;
+  background: rgba(14, 38, 35, 0.85);
+  color: #C9A96E;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.edit-mode .contact-block:hover .editor-remove-contact-block { opacity: 1; }
+.editor-remove-contact-block:hover {
+  background: rgba(201, 169, 110, 0.2);
+}
+
+.editor-add-contact-block-btn {
+  display: block;
+  margin: 0 auto var(--space-2xl);
+}
+
 
 /* ── Tag editor ──────────────────────────────────────────────── */
 .editor-remove-tag {

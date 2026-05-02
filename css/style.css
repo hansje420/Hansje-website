@@ -816,6 +816,65 @@ a.showreel-note:hover { color: var(--color-champagne); }
 }
 .contact-email:hover { border-color: var(--color-champagne); color: var(--color-champagne-light); }
 
+.contact-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xl) var(--space-2xl);
+  max-width: 960px;
+  margin: 0 auto var(--space-2xl);
+  padding-top: var(--space-lg);
+}
+.contact-block {
+  text-align: center;
+  position: relative;
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+.contact-block__label {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-champagne);
+  margin-bottom: var(--space-md);
+}
+.contact-block__primary {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--color-text-light);
+  margin-bottom: 0.25em;
+}
+.contact-block__secondary {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.4em;
+  letter-spacing: 0.04em;
+}
+.contact-block__email {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--color-champagne);
+  border-bottom: 1px solid rgba(201, 169, 110, 0.4);
+  padding-bottom: 2px;
+  margin: 0.3em 0;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.contact-block__email:hover { border-color: var(--color-champagne); color: var(--color-champagne-light); }
+
+@media (max-width: 600px) {
+  .contact-blocks {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+}
+
 .contact-form { text-align: left; margin-bottom: var(--space-2xl); }
 
 .form-row { margin-bottom: var(--space-md); }
