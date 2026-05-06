@@ -272,8 +272,12 @@ function createToolbar() {
 // ── TEXT EDITING ───────────────────────────────────────────────────────────────
 function enableTextEditing() {
   document.querySelectorAll('[data-editable]').forEach(el => {
-    el.contentEditable = 'true';
+    sanitizeEditableContent(el);
+    el.contentEditable = 'plaintext-only';
+    if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
     el.spellcheck = true;
+    el.addEventListener('paste', pasteAsPlainText);
+
     // Prevent Enter creating block wrappers in single-line elements
     if (!el.classList.contains('about-bio') && !el.classList.contains('contact-subtext')) {
       el.addEventListener('keydown', e => {
@@ -281,6 +285,74 @@ function enableTextEditing() {
       });
     }
   });
+}
+
+function pasteAsPlainText(e) {
+  e.preventDefault();
+  const preserveBreaks = e.currentTarget.classList.contains('about-heading');
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, cleanEditableText(text, preserveBreaks));
+}
+
+function sanitizeEditableContent(root) {
+  const fields = root.matches && root.matches('[data-editable]')
+    ? [root]
+    : Array.from(root.querySelectorAll('[data-editable]'));
+
+  fields.forEach(el => {
+    const preserveBreaks = el.classList.contains('about-heading');
+    const text = cleanEditableText(readEditableText(el, preserveBreaks), preserveBreaks);
+
+    el.removeAttribute('style');
+    el.removeAttribute('lang');
+
+    if (!preserveBreaks) {
+      el.textContent = text;
+      return;
+    }
+
+    el.replaceChildren();
+    text.split('\n').forEach((line, index) => {
+      if (index) el.appendChild(document.createElement('br'));
+      el.appendChild(document.createTextNode(line));
+    });
+  });
+}
+
+function readEditableText(el, preserveBreaks = false) {
+  if (!preserveBreaks) return el.textContent || '';
+
+  let text = '';
+  el.childNodes.forEach(node => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.nodeValue;
+      return;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    if (node.tagName === 'BR') {
+      text += '\n';
+      return;
+    }
+
+    text += readEditableText(node, true);
+  });
+
+  return text;
+}
+
+function cleanEditableText(text, preserveBreaks = false) {
+  const cleaned = (text || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+
+  if (!preserveBreaks) return cleaned.replace(/\s*\n\s*/g, ' ');
+
+  return cleaned
+    .replace(/[ \t]*\n[ \t]*/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
 }
 
 // ── SHOWREEL EDITOR ───────────────────────────────────────────────────────────
@@ -804,6 +876,7 @@ async function saveAndDeploy() {
     clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
     clone.querySelectorAll('[draggable]').forEach(el => el.removeAttribute('draggable'));
     clone.querySelectorAll('.editor-email-editable').forEach(el => el.classList.remove('editor-email-editable'));
+    sanitizeEditableContent(clone);
 
     // 4. Update photo data-index values
     clone.querySelectorAll('.photo-item').forEach((p, i) => { p.dataset.index = i; });
