@@ -289,7 +289,7 @@ function enableTextEditing() {
 
 function pasteAsPlainText(e) {
   e.preventDefault();
-  const preserveBreaks = e.currentTarget.classList.contains('about-heading');
+  const preserveBreaks = shouldPreserveEditableBreaks(e.currentTarget);
   const text = (e.clipboardData || window.clipboardData).getData('text/plain');
   document.execCommand('insertText', false, cleanEditableText(text, preserveBreaks));
 }
@@ -300,7 +300,7 @@ function sanitizeEditableContent(root) {
     : Array.from(root.querySelectorAll('[data-editable]'));
 
   fields.forEach(el => {
-    const preserveBreaks = el.classList.contains('about-heading');
+    const preserveBreaks = shouldPreserveEditableBreaks(el);
     const text = cleanEditableText(readEditableText(el, preserveBreaks), preserveBreaks);
 
     el.removeAttribute('style');
@@ -317,6 +317,10 @@ function sanitizeEditableContent(root) {
       el.appendChild(document.createTextNode(line));
     });
   });
+}
+
+function shouldPreserveEditableBreaks(el) {
+  return el.classList.contains('about-heading') || el.hasAttribute('data-multiline');
 }
 
 function readEditableText(el, preserveBreaks = false) {
@@ -336,10 +340,21 @@ function readEditableText(el, preserveBreaks = false) {
       return;
     }
 
+    if (isEditableBlockBreak(node)) {
+      if (text && !text.endsWith('\n')) text += '\n';
+      text += readEditableText(node, true);
+      if (!text.endsWith('\n')) text += '\n';
+      return;
+    }
+
     text += readEditableText(node, true);
   });
 
   return text;
+}
+
+function isEditableBlockBreak(node) {
+  return ['DIV', 'P'].includes(node.tagName);
 }
 
 function cleanEditableText(text, preserveBreaks = false) {

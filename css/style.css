@@ -454,6 +454,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   color: var(--color-text-mid);
   margin-bottom: var(--space-md);
   max-width: 55ch;
+  white-space: pre-line;
 }
 
 .about-tags {
