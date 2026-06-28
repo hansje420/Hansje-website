@@ -44,20 +44,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // 3. CREDITS TABS
-  const tabBtns     = document.querySelectorAll('.tab-btn');
-  const creditLists = document.querySelectorAll('.credits-list');
+  const creditsTabs = document.querySelector('.credits-tabs');
 
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach(b => { b.classList.remove('tab-btn--active'); b.setAttribute('aria-selected', 'false'); });
-      creditLists.forEach(l => { l.classList.remove('credits-list--active'); l.hidden = true; });
+  const activateCreditTab = btn => {
+    if (!btn) return;
 
-      btn.classList.add('tab-btn--active');
-      btn.setAttribute('aria-selected', 'true');
-      const target = document.getElementById(`tab-${btn.dataset.tab}`);
-      if (target) { target.classList.add('credits-list--active'); target.hidden = false; }
+    document.querySelectorAll('.tab-btn').forEach(tab => {
+      const isActive = tab === btn;
+      tab.classList.toggle('tab-btn--active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.tabIndex = isActive ? 0 : -1;
     });
-  });
+
+    document.querySelectorAll('.credits-list').forEach(panel => {
+      const isActive = panel.id === btn.getAttribute('aria-controls');
+      panel.classList.toggle('credits-list--active', isActive);
+      panel.hidden = !isActive;
+    });
+  };
+
+  if (creditsTabs) {
+    creditsTabs.addEventListener('click', e => {
+      const btn = e.target.closest('.tab-btn');
+      if (btn && creditsTabs.contains(btn)) activateCreditTab(btn);
+    });
+
+    creditsTabs.addEventListener('keydown', e => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      if (document.body.classList.contains('edit-mode') && btn.isContentEditable) return;
+
+      const tabs = [...creditsTabs.querySelectorAll('.tab-btn')];
+      let index = tabs.indexOf(btn);
+      if (e.key === 'Home') index = 0;
+      else if (e.key === 'End') index = tabs.length - 1;
+      else index = (index + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+
+      e.preventDefault();
+      activateCreditTab(tabs[index]);
+      tabs[index].focus();
+    });
+
+    activateCreditTab(creditsTabs.querySelector('.tab-btn--active') || creditsTabs.querySelector('.tab-btn'));
+  }
 
 
   // 4. LIGHTBOX

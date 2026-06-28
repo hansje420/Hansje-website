@@ -271,7 +271,7 @@ function createToolbar() {
 
 // ── TEXT EDITING ───────────────────────────────────────────────────────────────
 function enableTextEditing() {
-  document.querySelectorAll('[data-editable]').forEach(el => {
+  document.querySelectorAll('[data-editable]:not(.tab-btn)').forEach(el => {
     sanitizeEditableContent(el);
     el.contentEditable = 'plaintext-only';
     if (el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
@@ -516,18 +516,144 @@ function addTagRemoveButton(tag) {
 
 // ── CREDITS EDITOR ─────────────────────────────────────────────────────────────
 function initCreditsEditor() {
-  document.querySelectorAll('.credits-list').forEach(panel => {
-    // Remove button on each existing credit item
-    panel.querySelectorAll('.credit-item').forEach(item => addCreditItemControls(item));
+  const tabs = document.querySelector('.credits-tabs');
+  if (!tabs) return;
 
-    // "+ Add credit" button at the bottom of each panel
-    const addBtn = document.createElement('button');
-    addBtn.className = 'editor-add-entry-btn';
-    addBtn.setAttribute('data-editor-ui', 'true');
-    addBtn.textContent = '+ Add credit';
-    addBtn.addEventListener('click', () => toggleAddCreditForm(panel, addBtn));
-    panel.appendChild(addBtn);
+  tabs.querySelectorAll('.tab-btn').forEach(btn => makeCreditTabEditable(btn));
+
+  document.querySelectorAll('.credits-list').forEach(panel => {
+    // Match the editor's reading and keyboard order to the public layout.
+    panel.querySelectorAll('.credit-item').forEach(item => normalizeCreditFieldOrder(item));
+    panel.querySelectorAll('.credit-item').forEach(item => addCreditItemControls(item));
+    addCreditButton(panel);
   });
+
+  const tabTools = document.createElement('div');
+  tabTools.className = 'editor-credit-tab-tools';
+  tabTools.setAttribute('data-editor-ui', 'true');
+  tabTools.innerHTML = `
+    <span class="editor-credit-tabs-help">Click a tab name to rename it.</span>
+    <button class="editor-add-credit-tab-btn">+ Add tab</button>
+  `;
+  tabs.after(tabTools);
+
+  tabTools.querySelector('.editor-add-credit-tab-btn').addEventListener('click', () => {
+    toggleAddCreditTabForm(tabs, tabTools);
+  });
+}
+
+function makeCreditTabEditable(btn) {
+  btn.dataset.editable = '';
+  btn.contentEditable = 'plaintext-only';
+  if (btn.contentEditable !== 'plaintext-only') btn.contentEditable = 'true';
+  btn.spellcheck = true;
+  btn.title = 'Click the tab, then type to rename it';
+  if (btn.dataset.creditTabEditorReady === 'true') return;
+  btn.dataset.creditTabEditorReady = 'true';
+  btn.addEventListener('paste', pasteAsPlainText);
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      btn.blur();
+    }
+  });
+  btn.addEventListener('blur', () => {
+    btn.textContent = cleanEditableText(btn.textContent) || 'Untitled';
+  });
+}
+
+function addCreditButton(panel) {
+  const addBtn = document.createElement('button');
+  addBtn.className = 'editor-add-entry-btn';
+  addBtn.setAttribute('data-editor-ui', 'true');
+  addBtn.textContent = '+ Add credit';
+  addBtn.addEventListener('click', () => toggleAddCreditForm(panel, addBtn));
+  panel.appendChild(addBtn);
+}
+
+function toggleAddCreditTabForm(tabs, tabTools) {
+  const existing = tabTools.nextElementSibling;
+  if (existing && existing.classList.contains('editor-credit-tab-form')) {
+    existing.remove();
+    return;
+  }
+
+  const form = document.createElement('div');
+  form.className = 'editor-inline-form editor-inline-form--light editor-credit-tab-form';
+  form.setAttribute('data-editor-ui', 'true');
+  form.innerHTML = `
+    <input type="text" class="editor-form-tab-name" placeholder="Tab name (e.g. Voice-over)" maxlength="40" />
+    <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
+    <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
+  `;
+
+  const addTab = () => {
+    const input = form.querySelector('.editor-form-tab-name');
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+
+    const key = uniqueCreditTabKey(name);
+    const tabId = `credit-tab-${key}`;
+    const panelId = `tab-${key}`;
+
+    const btn = document.createElement('button');
+    btn.id = tabId;
+    btn.className = 'tab-btn';
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', 'false');
+    btn.setAttribute('aria-controls', panelId);
+    btn.dataset.tab = key;
+    btn.textContent = name;
+    makeCreditTabEditable(btn);
+    tabs.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.id = panelId;
+    panel.className = 'credits-list';
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', tabId);
+    panel.hidden = true;
+
+    const footer = document.querySelector('.credits-footer');
+    footer.before(panel);
+    addCreditButton(panel);
+
+    form.remove();
+    btn.click();
+    btn.focus();
+  };
+
+  form.querySelector('.editor-form-cancel-btn').addEventListener('click', () => form.remove());
+  form.querySelector('.editor-form-add-btn').addEventListener('click', addTab);
+  form.querySelector('.editor-form-tab-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addTab(); }
+  });
+
+  tabTools.after(form);
+  form.querySelector('.editor-form-tab-name').focus();
+}
+
+function uniqueCreditTabKey(name) {
+  const base = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'category';
+
+  let key = base;
+  let suffix = 2;
+  while (document.getElementById(`tab-${key}`)) key = `${base}-${suffix++}`;
+  return key;
+}
+
+function normalizeCreditFieldOrder(item) {
+  const title = item.querySelector('.credit-title');
+  const role = item.querySelector('.credit-role');
+  const details = item.querySelector('.credit-details');
+  if (title) item.appendChild(title);
+  if (role) item.appendChild(role);
+  if (details) item.appendChild(details);
 }
 
 function addCreditItemControls(item) {
@@ -584,8 +710,8 @@ function toggleAddCreditForm(panel, addBtn) {
   form.className = 'editor-inline-form editor-inline-form--light';
   form.setAttribute('data-editor-ui', 'true');
   form.innerHTML = `
+    <input type="text" class="editor-form-ctitle" placeholder="Play / project title" />
     <input type="text" class="editor-form-role" placeholder="Role (e.g. Lead — Anna)" />
-    <input type="text" class="editor-form-ctitle" placeholder="Project title" />
     <input type="text" class="editor-form-details" placeholder="Director · Country · Year" />
     <button class="editor-toolbar-btn editor-toolbar-btn--primary editor-form-add-btn">Add</button>
     <button class="editor-toolbar-btn editor-form-cancel-btn">Cancel</button>
@@ -596,13 +722,13 @@ function toggleAddCreditForm(panel, addBtn) {
     const role    = form.querySelector('.editor-form-role').value.trim();
     const ctitle  = form.querySelector('.editor-form-ctitle').value.trim();
     const details = form.querySelector('.editor-form-details').value.trim();
-    if (!role && !ctitle) { form.querySelector('.editor-form-role').focus(); return; }
+    if (!role && !ctitle) { form.querySelector('.editor-form-ctitle').focus(); return; }
 
     const item = document.createElement('div');
     item.className = 'credit-item';
     item.append(
-      createEditableSpan('credit-role', role),
       createEditableSpan('credit-title', ctitle),
+      createEditableSpan('credit-role', role),
       createEditableSpan('credit-details', details)
     );
     panel.insertBefore(item, addBtn);
@@ -621,7 +747,7 @@ function toggleAddCreditForm(panel, addBtn) {
   });
 
   addBtn.before(form);
-  form.querySelector('.editor-form-role').focus();
+  form.querySelector('.editor-form-ctitle').focus();
 }
 
 // ── TRAINING EDITOR ────────────────────────────────────────────────────────────
@@ -1067,16 +1193,21 @@ function resetRuntimeState(clone) {
     el.classList.remove('fade-target', 'is-visible', 'dragging', 'drag-over');
   });
 
-  clone.querySelectorAll('.credits-list').forEach(panel => {
-    const isFilm = panel.id === 'tab-film';
-    panel.classList.toggle('credits-list--active', isFilm);
-    panel.hidden = !isFilm;
+  const firstCreditTab = clone.querySelector('.tab-btn');
+  clone.querySelectorAll('.tab-btn').forEach(btn => {
+    const isFirst = btn === firstCreditTab;
+    btn.classList.toggle('tab-btn--active', isFirst);
+    btn.setAttribute('aria-selected', isFirst ? 'true' : 'false');
+    btn.tabIndex = isFirst ? 0 : -1;
+    btn.removeAttribute('title');
+    btn.removeAttribute('data-credit-tab-editor-ready');
   });
 
-  clone.querySelectorAll('.tab-btn').forEach(btn => {
-    const isFilm = btn.dataset.tab === 'film';
-    btn.classList.toggle('tab-btn--active', isFilm);
-    btn.setAttribute('aria-selected', isFilm ? 'true' : 'false');
+  const firstPanelId = firstCreditTab && firstCreditTab.getAttribute('aria-controls');
+  clone.querySelectorAll('.credits-list').forEach(panel => {
+    const isFirst = panel.id === firstPanelId;
+    panel.classList.toggle('credits-list--active', isFirst);
+    panel.hidden = !isFirst;
   });
 }
 

@@ -290,6 +290,52 @@
   padding-left: 1.5rem;
 }
 
+.editor-credit-tab-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: calc(var(--space-xl) * -0.65) 0 var(--space-lg);
+}
+
+.editor-credit-tabs-help {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.72rem;
+  color: rgba(28, 28, 26, 0.55);
+}
+
+.editor-add-credit-tab-btn {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.4em 0.8em;
+  border: 1px dashed rgba(27, 92, 88, 0.45);
+  border-radius: 4px;
+  background: transparent;
+  color: #1B5C58;
+  cursor: pointer;
+}
+
+.editor-add-credit-tab-btn:hover {
+  border-style: solid;
+  background: rgba(27, 92, 88, 0.06);
+}
+
+.editor-credit-tab-form {
+  margin-top: calc(var(--space-lg) * -0.5);
+  margin-bottom: var(--space-lg);
+}
+
+.editor-form-tab-name {
+  flex: 1;
+  min-width: 190px;
+}
+
+.edit-mode .tab-btn[data-editable] {
+  cursor: text;
+  outline: none;
+}
+
 /* :only-child breaks in edit mode because the editor inserts sibling elements.
    JS sets data-no-year on items that have no year span (Languages, Physical Skills). */
 .edit-mode [data-training-list] li[data-no-year] .training-desc {

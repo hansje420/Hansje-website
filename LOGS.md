@@ -16,6 +16,13 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.6 — June 2026
+
+### Updates
+- **Credits editor** — Added renamable/custom credit tabs and corrected field order to play/project, role, director.
+
+---
+
 ## Version 1.5 — May 2026
 
 ### Updates
