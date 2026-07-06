@@ -16,6 +16,13 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.7 — July 2026
+
+### Updates
+- **About** — Aligned the desktop portrait with the start of the biography text.
+
+---
+
 ## Version 1.6 — June 2026
 
 ### Updates

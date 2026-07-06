@@ -493,6 +493,20 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .about-photo-wrap:hover .about-photo { transform: scale(1.03); }
 
+@media (min-width: 901px) {
+  .about-grid {
+    row-gap: 0;
+    align-items: start;
+  }
+
+  .about-text { display: contents; }
+  .about-text > .section-label { grid-column: 1; grid-row: 1; }
+  .about-heading { grid-column: 1; grid-row: 2; }
+  .about-bio { grid-column: 1; grid-row: 3; }
+  .about-tags { grid-column: 1; grid-row: 4; }
+  .about-photo-wrap { grid-column: 2; grid-row: 3 / span 2; }
+}
+
 
 /* 8. SHOWREEL SECTION
    ============================================================ */
