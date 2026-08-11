@@ -16,6 +16,13 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.10 — August 2026
+
+### Fix
+- **New photo preview** — Newly selected gallery photos now appear immediately from the local file while uploading; Save & Deploy still writes the permanent `images/...` path into the published page.
+
+---
+
 ## Version 1.9 — August 2026
 
 ### Updates

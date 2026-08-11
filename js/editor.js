@@ -1179,12 +1179,13 @@ function openCollageBuilder(existingItem = null) {
       input.remove();
       if (!file) return;
 
+      const previousChildren = [...slot.childNodes];
       button.disabled = true;
       status.textContent = `Uploading ${file.name}…`;
       try {
-        const path = await uploadPhotoFile(file);
+        const previewSrc = await fileToDataUrl(file);
         const img = document.createElement('img');
-        img.src = path;
+        img.src = previewSrc;
         img.alt = 'Hansje Görtz';
         img.loading = 'lazy';
         setImageSetting(img, '--collage-zoom', 1);
@@ -1193,12 +1194,24 @@ function openCollageBuilder(existingItem = null) {
         const photoTitle = ensurePhotoTitle(slot);
         slot.replaceChildren(img, photoTitle);
         slot.classList.remove('collage-slot--empty');
+        slot.dataset.uploadPending = 'true';
+        applyBtn.disabled = true;
+        renderControls();
+
+        const path = await uploadPhotoFile(file, previewSrc);
+        img.dataset.uploadSrc = path;
+        delete slot.dataset.uploadPending;
+        applyBtn.disabled = state.slots.some(candidate => candidate.dataset.uploadPending === 'true');
         status.textContent = 'Photo uploaded. Adjust its framing below.';
         renderControls();
       } catch (err) {
+        slot.replaceChildren(...previousChildren);
+        slot.classList.toggle('collage-slot--empty', !slot.querySelector('img'));
+        delete slot.dataset.uploadPending;
+        applyBtn.disabled = state.slots.some(candidate => candidate.dataset.uploadPending === 'true');
+        renderControls();
         status.textContent = '';
         showToast('Upload failed: ' + err.message, 'error');
-        button.disabled = false;
       }
     }, { once: true });
 
@@ -1339,8 +1352,9 @@ function openCollageBuilder(existingItem = null) {
 }
 
 // ── PHOTO UPLOAD ───────────────────────────────────────────────────────────────
-async function uploadPhotoFile(file) {
-  const base64 = await fileToBase64(file);
+async function uploadPhotoFile(file, previewSrc = '') {
+  const dataUrl = previewSrc || await fileToDataUrl(file);
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const filename = `${Date.now()}_${safeName}`;
 
@@ -1385,16 +1399,23 @@ async function saveAndDeploy() {
     clone.querySelectorAll('.editor-email-editable').forEach(el => el.classList.remove('editor-email-editable'));
     sanitizeEditableContent(clone);
 
-    // 4. Update photo data-index values
+    // 4. Replace local upload previews with their permanent image paths
+    clone.querySelectorAll('img[data-upload-src]').forEach(img => {
+      const uploadedSrc = img.dataset.uploadSrc;
+      if (uploadedSrc) img.setAttribute('src', uploadedSrc);
+      img.removeAttribute('data-upload-src');
+    });
+
+    // 5. Update photo data-index values
     clone.querySelectorAll('.photo-item').forEach((p, i) => { p.dataset.index = i; });
 
-    // 5. Bump cache-busting version on local assets
+    // 6. Bump cache-busting version on local assets
     bumpAssetVersions(clone);
 
-    // 6. Serialise to clean HTML string
+    // 7. Serialise to clean HTML string
     const html = '<!DOCTYPE html>\n' + clone.outerHTML;
 
-    // 7. Fetch current file SHA from GitHub
+    // 8. Fetch current file SHA from GitHub
     const getRes = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}?ref=${GITHUB_BRANCH}`,
       {
@@ -1410,7 +1431,7 @@ async function saveAndDeploy() {
     }
     const { sha } = await getRes.json();
 
-    // 8. Commit updated file
+    // 9. Commit updated file
     const putRes = await fetchWithTimeout(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`,
       {
@@ -1577,10 +1598,10 @@ function resetRuntimeState(clone) {
   });
 }
 
-function fileToBase64(file) {
+function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
