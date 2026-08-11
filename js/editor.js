@@ -1003,7 +1003,7 @@ function cloneCollageForEditing(item) {
     }
     const oldTitle = item.querySelector('.collage-photo-title');
     const slot = createCollageSlot(img, oldTitle ? oldTitle.textContent.trim() : '');
-    converted.querySelector('.collage-title').before(slot);
+    converted.querySelector('.collage-frame').appendChild(slot);
     return converted;
   }
 
@@ -1027,10 +1027,6 @@ function createCollageItem(layoutId = 'single') {
   frame.className = `collage-frame collage-layout--${layoutId}`;
   item.appendChild(frame);
 
-  const title = document.createElement('p');
-  title.className = 'collage-title';
-  frame.appendChild(title);
-
   return item;
 }
 
@@ -1039,11 +1035,7 @@ function openCollageBuilder(existingItem = null) {
 
   const item = existingItem ? cloneCollageForEditing(existingItem) : createCollageItem();
   const frame = item.querySelector('.collage-frame');
-  const title = frame.querySelector('.collage-title') || document.createElement('p');
-  if (!title.parentNode) {
-    title.className = 'collage-title';
-    frame.appendChild(title);
-  }
+  frame.querySelectorAll('.collage-title').forEach(title => title.remove());
 
   const currentLayout = COLLAGE_LAYOUTS.find(layout =>
     layout.id === item.dataset.collageLayout || frame.classList.contains(`collage-layout--${layout.id}`)
@@ -1052,7 +1044,6 @@ function openCollageBuilder(existingItem = null) {
   const state = {
     item,
     frame,
-    title,
     layout: currentLayout,
     slots: [...frame.querySelectorAll('.collage-slot')]
   };
@@ -1072,7 +1063,7 @@ function openCollageBuilder(existingItem = null) {
         <div>
           <p class="editor-password-label">${existingItem ? 'Edit gallery item' : 'New gallery item'}</p>
           <h2 id="collage-builder-title" class="editor-password-title">Build the full tile</h2>
-          <p class="editor-password-help">Choose a single-photo or collage layout, then frame and optionally title every photo. Collage photos touch with no gaps or borders.</p>
+          <p class="editor-password-help">Choose a single-photo or collage layout, then frame and optionally caption every photo. Collage photos touch with no gaps or borders.</p>
         </div>
         <button type="button" class="collage-builder-close" aria-label="Close collage builder">×</button>
       </div>
@@ -1081,11 +1072,6 @@ function openCollageBuilder(existingItem = null) {
         <div class="collage-builder-preview-wrap">
           <p class="collage-builder-section-label">Full tile preview</p>
           <div class="collage-builder-preview"></div>
-          <label class="collage-title-field">
-            <span>Overall collage title</span>
-            <input type="text" maxlength="80" placeholder="Optional collage title" />
-            <small>Optional for multi-photo collages; displayed at the top in white Georgia.</small>
-          </label>
         </div>
         <div class="collage-photo-controls-wrap">
           <div class="collage-photo-controls-heading">
@@ -1106,13 +1092,11 @@ function openCollageBuilder(existingItem = null) {
   const layoutWrap = modal.querySelector('.collage-builder-layouts');
   const preview = modal.querySelector('.collage-builder-preview');
   const controls = modal.querySelector('.collage-photo-controls');
-  const titleInput = modal.querySelector('.collage-title-field input');
   const status = modal.querySelector('.collage-builder-status');
   const applyBtn = modal.querySelector('.collage-builder-apply');
   let draggedSlot = null;
 
   preview.appendChild(item);
-  titleInput.value = title.textContent.trim();
 
   COLLAGE_LAYOUTS.forEach(layout => {
     const btn = document.createElement('button');
@@ -1136,8 +1120,7 @@ function openCollageBuilder(existingItem = null) {
     state.item.dataset.collageLayout = state.layout.id;
     state.item.classList.toggle('photo-item--framed-single', state.layout.count === 1);
     state.item.classList.toggle('photo-item--collage', state.layout.count > 1);
-    state.frame.replaceChildren(...state.slots.slice(0, state.layout.count), state.title);
-    titleInput.closest('.collage-title-field').hidden = state.layout.count === 1;
+    state.frame.replaceChildren(...state.slots.slice(0, state.layout.count));
   }
 
   function setBuilderLayout(layout) {
@@ -1249,7 +1232,7 @@ function openCollageBuilder(existingItem = null) {
       const photoTitle = ensurePhotoTitle(slot);
       const photoTitleField = document.createElement('label');
       photoTitleField.className = 'collage-photo-title-field';
-      photoTitleField.innerHTML = '<span>Photo title</span><input type="text" maxlength="80" placeholder="Optional title" />';
+      photoTitleField.innerHTML = '<span>Photo caption</span><input type="text" maxlength="80" placeholder="Optional caption" />';
       const photoTitleInput = photoTitleField.querySelector('input');
       photoTitleInput.value = photoTitle.textContent.trim();
       photoTitleInput.addEventListener('input', () => {
@@ -1310,10 +1293,6 @@ function openCollageBuilder(existingItem = null) {
   modal.addEventListener('click', e => { if (e.target === modal) close(); });
   modal.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 
-  titleInput.addEventListener('input', () => {
-    state.title.textContent = titleInput.value;
-  });
-
   applyBtn.addEventListener('click', () => {
     const activeSlots = state.slots.slice(0, state.layout.count);
     if (activeSlots.some(slot => !slot.querySelector('img'))) {
@@ -1322,16 +1301,13 @@ function openCollageBuilder(existingItem = null) {
     }
 
     renderFrame();
-    state.title.textContent = state.layout.count > 1 ? titleInput.value.trim() : '';
     const firstPhotoTitle = ensurePhotoTitle(activeSlots[0]).textContent.trim();
     if (state.layout.count === 1) {
       const img = activeSlots[0].querySelector('img');
       img.alt = firstPhotoTitle || 'Hansje Görtz';
       state.item.setAttribute('aria-label', firstPhotoTitle ? `Open photo: ${firstPhotoTitle}` : 'Open Hansje Görtz photo');
     } else {
-      state.item.setAttribute('aria-label', state.title.textContent
-        ? `Open collage: ${state.title.textContent}`
-        : 'Open Hansje Görtz photo collage');
+      state.item.setAttribute('aria-label', 'Open Hansje Görtz photo collage');
     }
 
     const grid = document.querySelector('.photos-grid');

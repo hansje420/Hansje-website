@@ -769,6 +769,7 @@ a.showreel-note:hover { color: var(--color-champagne); }
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 .collage-slot img {
@@ -785,12 +786,13 @@ a.showreel-note:hover { color: var(--color-champagne); }
 .collage-photo-title {
   position: absolute;
   z-index: 2;
-  left: clamp(0.4rem, 5%, 1rem);
-  right: clamp(0.4rem, 5%, 1rem);
-  bottom: clamp(0.4rem, 5%, 1rem);
+  left: clamp(0.55rem, 2.2%, 1rem);
+  right: clamp(0.55rem, 2.2%, 1rem);
+  bottom: clamp(0.55rem, 2.2%, 1rem);
   color: #fff;
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(0.72rem, 1.45vw, 1.3rem);
+  font-size: clamp(0.82rem, 1.45vw, 1.3rem);
+  font-size: clamp(0.82rem, 5cqw, 2rem);
   font-weight: 700;
   line-height: 1.08;
   overflow-wrap: anywhere;
@@ -800,22 +802,8 @@ a.showreel-note:hover { color: var(--color-champagne); }
 
 .collage-photo-title:empty { display: none; }
 
-.collage-title {
-  position: absolute;
-  z-index: 2;
-  left: clamp(0.75rem, 4%, 1.4rem);
-  right: clamp(0.75rem, 4%, 1.4rem);
-  top: clamp(0.75rem, 4%, 1.4rem);
-  color: #fff;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.15rem, 2.3vw, 2rem);
-  font-weight: 400;
-  line-height: 1.08;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.72);
-  pointer-events: none;
-}
-
-.collage-title:empty { display: none; }
+/* Hide legacy overall collage titles; captions now belong to individual photos. */
+.collage-title { display: none; }
 
 .collage-layout--single { grid-template: 1fr / 1fr; }
 .collage-layout--two-columns { grid-template-columns: repeat(2, 1fr); }
@@ -859,8 +847,6 @@ a.showreel-note:hover { color: var(--color-champagne); }
   box-shadow: var(--shadow-deep);
 }
 .lightbox-collage-host[hidden] { display: none; }
-.lightbox-collage-host .collage-title { font-size: clamp(1.4rem, 3.2vw, 2.7rem); }
-
 .lightbox-close {
   position: absolute;
   top: var(--space-md); right: var(--space-md);

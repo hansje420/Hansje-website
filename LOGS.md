@@ -16,6 +16,14 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.11 — August 2026
+
+### Gallery captions
+- **Per-photo captions only** — Removed the redundant overall collage title from the editor and newly saved gallery items; legacy overall titles stay hidden and are removed when reopened.
+- **Reference-matched sizing** — White Georgia captions now scale against each photo slot up to 32px, preserving the supplied bottom-left editorial treatment without overwhelming narrow collage columns.
+
+---
+
 ## Version 1.10 — August 2026
 
 ### Fix

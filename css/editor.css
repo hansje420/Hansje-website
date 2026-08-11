@@ -786,9 +786,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.collage-title-field { display: block; margin-top: 1rem; }
-.collage-title-field[hidden] { display: none; }
-.collage-title-field > span,
 .collage-photo-title-field > span,
 .collage-framing-controls label > span {
   display: flex;
@@ -798,19 +795,6 @@
   font-size: 0.7rem;
   letter-spacing: 0.05em;
 }
-.collage-title-field input {
-  width: 100%;
-  min-height: 42px;
-  margin-top: 0.35rem;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid rgba(27, 92, 88, 0.22);
-  border-radius: 4px;
-  background: #fff;
-  color: #1C1C1A;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1rem;
-}
-.collage-title-field input:focus { border-color: #1B5C58; outline: none; }
 .collage-photo-title-field {
   display: block;
   margin-top: 0.7rem;
@@ -828,7 +812,6 @@
   font-size: 0.85rem;
 }
 .collage-photo-title-field input:focus { border-color: #1B5C58; outline: none; }
-.collage-title-field small,
 .collage-photo-controls-heading small {
   color: rgba(28, 28, 26, 0.48);
   font-family: 'Jost', sans-serif;
