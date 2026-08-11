@@ -97,19 +97,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const lightboxClose = lightbox.querySelector('.lightbox-close');
   const lightboxPrev  = lightbox.querySelector('.lightbox-prev');
   const lightboxNext  = lightbox.querySelector('.lightbox-next');
+  const collageHost   = lightbox.querySelector('.lightbox-collage-host');
   const photoItems    = document.querySelectorAll('.photo-item');
 
   const gallery = Array.from(photoItems).map(item => {
+    const isCollage = item.classList.contains('photo-item--collage');
     const img = item.querySelector('img');
-    return { src: img.src, alt: img.alt };
+    return isCollage
+      ? { type: 'collage', element: item, alt: item.getAttribute('aria-label') || 'Hansje Görtz collage' }
+      : { type: 'image', src: img.src, alt: img.alt };
   });
 
   let currentIdx = 0;
 
+  const showGalleryItem = idx => {
+    const entry = gallery[idx];
+    if (!entry) return;
+
+    if (entry.type === 'collage') {
+      const frame = entry.element.querySelector('.collage-frame');
+      collageHost.replaceChildren(frame.cloneNode(true));
+      collageHost.hidden = false;
+      lightboxImg.hidden = true;
+      lightbox.setAttribute('aria-label', entry.alt);
+      return;
+    }
+
+    collageHost.replaceChildren();
+    collageHost.hidden = true;
+    lightboxImg.hidden = false;
+    lightboxImg.src = entry.src;
+    lightboxImg.alt = entry.alt;
+    lightbox.setAttribute('aria-label', `Full photo: ${entry.alt}`);
+  };
+
   const openLightbox = (idx) => {
     currentIdx = idx;
-    lightboxImg.src = gallery[idx].src;
-    lightboxImg.alt = gallery[idx].alt;
+    showGalleryItem(idx);
     lightbox.classList.add('is-open');
     lightbox.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -122,21 +146,27 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const showPrev = () => {
     currentIdx = (currentIdx - 1 + gallery.length) % gallery.length;
-    lightboxImg.src = gallery[currentIdx].src;
-    lightboxImg.alt = gallery[currentIdx].alt;
+    showGalleryItem(currentIdx);
   };
   const showNext = () => {
     currentIdx = (currentIdx + 1) % gallery.length;
-    lightboxImg.src = gallery[currentIdx].src;
-    lightboxImg.alt = gallery[currentIdx].alt;
+    showGalleryItem(currentIdx);
   };
 
   photoItems.forEach((item, i) => {
     item.setAttribute('tabindex', '0');
     item.setAttribute('role', 'button');
-    item.addEventListener('click', () => openLightbox(i));
+    if (item.classList.contains('photo-item--collage')) {
+      item.setAttribute('aria-label', item.getAttribute('aria-label') || 'Open collage');
+    }
+    item.addEventListener('click', () => {
+      if (!document.body.classList.contains('edit-mode')) openLightbox(i);
+    });
     item.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(i); }
+      if (!document.body.classList.contains('edit-mode') && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        openLightbox(i);
+      }
     });
   });
 

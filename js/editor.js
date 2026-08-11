@@ -16,9 +16,22 @@ const GITHUB_FILE   = 'index.html';
 let _token   = null;
 let _editing = false;
 let _dragSrc = null;
-let _fileInput = null;
 let _authPromptOpen = false;
 let _saving = false;
+
+const COLLAGE_LAYOUTS = [
+  { id: 'single', count: 1, label: 'Single photo' },
+  { id: 'two-columns', count: 2, label: 'Side by side' },
+  { id: 'two-rows', count: 2, label: 'Stacked' },
+  { id: 'three-columns', count: 3, label: 'Three side by side' },
+  { id: 'three-rows', count: 3, label: 'Three stacked' },
+  { id: 'feature-left', count: 3, label: 'Large left' },
+  { id: 'feature-right', count: 3, label: 'Large right' },
+  { id: 'four-columns', count: 4, label: 'Four side by side' },
+  { id: 'four-rows', count: 4, label: 'Four stacked' },
+  { id: 'four-grid', count: 4, label: 'Two by two' },
+  { id: 'feature-top', count: 4, label: 'Large on top' }
+];
 
 // ── BOOT ───────────────────────────────────────────────────────────────────────
 checkHash();
@@ -880,19 +893,19 @@ function initPhotoEditor() {
 
   grid.querySelectorAll('.photo-item').forEach(item => addPhotoItemControls(item, grid));
 
-  _fileInput = document.createElement('input');
-  _fileInput.type = 'file';
-  _fileInput.accept = 'image/jpeg,image/jpg,image/png,image/webp';
-  _fileInput.style.display = 'none';
-  _fileInput.setAttribute('data-editor-ui', 'true');
-  _fileInput.addEventListener('change', onFileSelected);
-  document.body.appendChild(_fileInput);
-
   const addBtn = document.createElement('div');
   addBtn.className = 'editor-add-photo-btn';
   addBtn.setAttribute('data-editor-ui', 'true');
-  addBtn.innerHTML = '<span>+ Add photo</span>';
-  addBtn.addEventListener('click', () => _fileInput.click());
+  addBtn.setAttribute('role', 'button');
+  addBtn.tabIndex = 0;
+  addBtn.innerHTML = '<span>+ Add gallery item</span>';
+  addBtn.addEventListener('click', () => openCollageBuilder());
+  addBtn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openCollageBuilder();
+    }
+  });
   grid.appendChild(addBtn);
 }
 
@@ -913,6 +926,16 @@ function addPhotoItemControls(item, grid) {
   removeBtn.title = 'Remove photo';
   removeBtn.addEventListener('click', e => { e.stopPropagation(); item.remove(); });
   item.appendChild(removeBtn);
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'editor-edit-collage';
+  editBtn.setAttribute('data-editor-ui', 'true');
+  editBtn.textContent = 'Edit item';
+  editBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    openCollageBuilder(item);
+  });
+  item.appendChild(editBtn);
 
   item.addEventListener('dragstart', e => {
     _dragSrc = item;
@@ -939,61 +962,404 @@ function addPhotoItemControls(item, grid) {
   });
 }
 
-// ── PHOTO UPLOAD ───────────────────────────────────────────────────────────────
-async function onFileSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  _fileInput.value = '';
+function createCollageSlot(img = null, photoTitle = '') {
+  const slot = document.createElement('div');
+  slot.className = 'collage-slot';
 
-  setStatus('Uploading photo…');
+  if (img) {
+    slot.appendChild(img);
+  } else {
+    slot.classList.add('collage-slot--empty');
+  }
 
-  try {
-    const base64 = await fileToBase64(file);
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const filename = `${Date.now()}_${safeName}`;
+  const title = document.createElement('p');
+  title.className = 'collage-photo-title';
+  title.textContent = photoTitle;
+  slot.appendChild(title);
 
-    const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/images/${filename}`,
-      {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: `Add photo: ${filename}`,
-          content: base64,
-          branch: GITHUB_BRANCH
-        })
+  return slot;
+}
+
+function ensurePhotoTitle(slot) {
+  let title = slot.querySelector('.collage-photo-title');
+  if (!title) {
+    title = document.createElement('p');
+    title.className = 'collage-photo-title';
+    slot.appendChild(title);
+  }
+  return title;
+}
+
+function cloneCollageForEditing(item) {
+  if (!item.querySelector('.collage-frame')) {
+    const converted = createCollageItem('single');
+    converted.dataset.index = item.dataset.index || '';
+    const sourceImg = item.querySelector('img');
+    const img = sourceImg ? sourceImg.cloneNode(true) : null;
+    if (img) {
+      img.style.setProperty('--collage-zoom', '1');
+      img.style.setProperty('--collage-x', '50%');
+      img.style.setProperty('--collage-y', '0%');
+    }
+    const oldTitle = item.querySelector('.collage-photo-title');
+    const slot = createCollageSlot(img, oldTitle ? oldTitle.textContent.trim() : '');
+    converted.querySelector('.collage-title').before(slot);
+    return converted;
+  }
+
+  const clone = item.cloneNode(true);
+  clone.querySelectorAll('[data-editor-ui]').forEach(el => el.remove());
+  clone.removeAttribute('draggable');
+  clone.classList.remove('dragging', 'drag-over');
+  return clone;
+}
+
+function createCollageItem(layoutId = 'single') {
+  const item = document.createElement('div');
+  item.className = layoutId === 'single'
+    ? 'photo-item photo-item--framed-single'
+    : 'photo-item photo-item--collage';
+  item.dataset.collageLayout = layoutId;
+  item.setAttribute('role', 'button');
+  item.tabIndex = 0;
+
+  const frame = document.createElement('div');
+  frame.className = `collage-frame collage-layout--${layoutId}`;
+  item.appendChild(frame);
+
+  const title = document.createElement('p');
+  title.className = 'collage-title';
+  frame.appendChild(title);
+
+  return item;
+}
+
+function openCollageBuilder(existingItem = null) {
+  if (document.getElementById('collage-builder-modal')) return;
+
+  const item = existingItem ? cloneCollageForEditing(existingItem) : createCollageItem();
+  const frame = item.querySelector('.collage-frame');
+  const title = frame.querySelector('.collage-title') || document.createElement('p');
+  if (!title.parentNode) {
+    title.className = 'collage-title';
+    frame.appendChild(title);
+  }
+
+  const currentLayout = COLLAGE_LAYOUTS.find(layout =>
+    layout.id === item.dataset.collageLayout || frame.classList.contains(`collage-layout--${layout.id}`)
+  ) || COLLAGE_LAYOUTS[0];
+
+  const state = {
+    item,
+    frame,
+    title,
+    layout: currentLayout,
+    slots: [...frame.querySelectorAll('.collage-slot')]
+  };
+
+  while (state.slots.length < currentLayout.count) state.slots.push(createCollageSlot());
+
+  const modal = document.createElement('div');
+  modal.id = 'collage-builder-modal';
+  modal.className = 'editor-modal editor-collage-modal';
+  modal.setAttribute('data-editor-ui', 'true');
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'collage-builder-title');
+  modal.innerHTML = `
+    <div class="editor-modal-card collage-builder-card">
+      <div class="collage-builder-header">
+        <div>
+          <p class="editor-password-label">${existingItem ? 'Edit gallery item' : 'New gallery item'}</p>
+          <h2 id="collage-builder-title" class="editor-password-title">Build the full tile</h2>
+          <p class="editor-password-help">Choose a single-photo or collage layout, then frame and optionally title every photo. Collage photos touch with no gaps or borders.</p>
+        </div>
+        <button type="button" class="collage-builder-close" aria-label="Close collage builder">×</button>
+      </div>
+      <div class="collage-builder-layouts" role="group" aria-label="Collage arrangements"></div>
+      <div class="collage-builder-workspace">
+        <div class="collage-builder-preview-wrap">
+          <p class="collage-builder-section-label">Full tile preview</p>
+          <div class="collage-builder-preview"></div>
+          <label class="collage-title-field">
+            <span>Overall collage title</span>
+            <input type="text" maxlength="80" placeholder="Optional collage title" />
+            <small>Optional for multi-photo collages; displayed at the top in white Georgia.</small>
+          </label>
+        </div>
+        <div class="collage-photo-controls-wrap">
+          <div class="collage-photo-controls-heading">
+            <p class="collage-builder-section-label">Photos &amp; framing</p>
+            <small>Drag only the dotted handle to reorder photos.</small>
+          </div>
+          <div class="collage-photo-controls"></div>
+        </div>
+      </div>
+      <p class="collage-builder-status" aria-live="polite"></p>
+      <div class="collage-builder-actions">
+        <button type="button" class="editor-toolbar-btn collage-builder-cancel">Cancel</button>
+        <button type="button" class="editor-toolbar-btn editor-toolbar-btn--primary collage-builder-apply">${existingItem ? 'Save gallery item' : 'Add gallery item'}</button>
+      </div>
+    </div>
+  `;
+
+  const layoutWrap = modal.querySelector('.collage-builder-layouts');
+  const preview = modal.querySelector('.collage-builder-preview');
+  const controls = modal.querySelector('.collage-photo-controls');
+  const titleInput = modal.querySelector('.collage-title-field input');
+  const status = modal.querySelector('.collage-builder-status');
+  const applyBtn = modal.querySelector('.collage-builder-apply');
+  let draggedSlot = null;
+
+  preview.appendChild(item);
+  titleInput.value = title.textContent.trim();
+
+  COLLAGE_LAYOUTS.forEach(layout => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'collage-layout-option';
+    btn.dataset.layout = layout.id;
+    btn.setAttribute('aria-pressed', layout.id === currentLayout.id ? 'true' : 'false');
+    btn.innerHTML = `
+      <span class="collage-layout-mini collage-layout--${layout.id}" aria-hidden="true">
+        ${Array.from({ length: layout.count }, () => '<i></i>').join('')}
+      </span>
+      <span>${layout.label}</span>
+      <small>${layout.count} ${layout.count === 1 ? 'photo' : 'photos'}</small>
+    `;
+    btn.addEventListener('click', () => setBuilderLayout(layout));
+    layoutWrap.appendChild(btn);
+  });
+
+  function renderFrame() {
+    state.frame.className = `collage-frame collage-layout--${state.layout.id}`;
+    state.item.dataset.collageLayout = state.layout.id;
+    state.item.classList.toggle('photo-item--framed-single', state.layout.count === 1);
+    state.item.classList.toggle('photo-item--collage', state.layout.count > 1);
+    state.frame.replaceChildren(...state.slots.slice(0, state.layout.count), state.title);
+    titleInput.closest('.collage-title-field').hidden = state.layout.count === 1;
+  }
+
+  function setBuilderLayout(layout) {
+    state.layout = layout;
+    while (state.slots.length < layout.count) state.slots.push(createCollageSlot());
+    renderFrame();
+    layoutWrap.querySelectorAll('.collage-layout-option').forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.layout === layout.id ? 'true' : 'false');
+    });
+    renderControls();
+  }
+
+  function moveSlot(from, to) {
+    if (to < 0 || to >= state.layout.count || from === to) return;
+    const [slot] = state.slots.splice(from, 1);
+    state.slots.splice(to, 0, slot);
+    renderFrame();
+    renderControls();
+  }
+
+  function getImageSetting(img, name, fallback) {
+    const value = img.style.getPropertyValue(name).trim();
+    return value ? parseFloat(value) : fallback;
+  }
+
+  function setImageSetting(img, name, value, suffix = '') {
+    img.style.setProperty(name, `${value}${suffix}`);
+  }
+
+  async function choosePhoto(slot, button) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/jpg,image/png,image/webp';
+    input.hidden = true;
+    modal.appendChild(input);
+
+    input.addEventListener('change', async () => {
+      const file = input.files[0];
+      input.remove();
+      if (!file) return;
+
+      button.disabled = true;
+      status.textContent = `Uploading ${file.name}…`;
+      try {
+        const path = await uploadPhotoFile(file);
+        const img = document.createElement('img');
+        img.src = path;
+        img.alt = 'Hansje Görtz';
+        img.loading = 'lazy';
+        setImageSetting(img, '--collage-zoom', 1);
+        setImageSetting(img, '--collage-x', 50, '%');
+        setImageSetting(img, '--collage-y', 50, '%');
+        const photoTitle = ensurePhotoTitle(slot);
+        slot.replaceChildren(img, photoTitle);
+        slot.classList.remove('collage-slot--empty');
+        status.textContent = 'Photo uploaded. Adjust its framing below.';
+        renderControls();
+      } catch (err) {
+        status.textContent = '';
+        showToast('Upload failed: ' + err.message, 'error');
+        button.disabled = false;
       }
-    );
+    }, { once: true });
 
-    if (!res.ok) {
-      const err = await res.json();
-      showToast('Upload failed: ' + (err.message || 'unknown error'), 'error');
-      setStatus('');
+    input.click();
+  }
+
+  function renderControls() {
+    controls.replaceChildren();
+
+    state.slots.slice(0, state.layout.count).forEach((slot, index) => {
+      const img = slot.querySelector('img');
+      const card = document.createElement('div');
+      card.className = 'collage-photo-card';
+      card.dataset.slotIndex = index;
+      card.innerHTML = `
+        <div class="collage-photo-card-header">
+          <span class="collage-photo-drag" title="Drag to reorder" role="button" aria-label="Drag photo ${index + 1} to reorder" tabindex="0">⠿</span>
+          <strong>Photo ${index + 1}</strong>
+          <div class="collage-photo-move-actions">
+            <button type="button" data-move="previous" aria-label="Move photo ${index + 1} earlier">←</button>
+            <button type="button" data-move="next" aria-label="Move photo ${index + 1} later">→</button>
+          </div>
+        </div>
+        <button type="button" class="collage-photo-upload">${img ? 'Replace photo' : '+ Upload photo'}</button>
+      `;
+
+      card.querySelector('[data-move="previous"]').disabled = index === 0;
+      card.querySelector('[data-move="next"]').disabled = index === state.layout.count - 1;
+      card.querySelector('[data-move="previous"]').addEventListener('click', () => moveSlot(index, index - 1));
+      card.querySelector('[data-move="next"]').addEventListener('click', () => moveSlot(index, index + 1));
+
+      const uploadBtn = card.querySelector('.collage-photo-upload');
+      uploadBtn.addEventListener('click', () => choosePhoto(slot, uploadBtn));
+
+      const photoTitle = ensurePhotoTitle(slot);
+      const photoTitleField = document.createElement('label');
+      photoTitleField.className = 'collage-photo-title-field';
+      photoTitleField.innerHTML = '<span>Photo title</span><input type="text" maxlength="80" placeholder="Optional title" />';
+      const photoTitleInput = photoTitleField.querySelector('input');
+      photoTitleInput.value = photoTitle.textContent.trim();
+      photoTitleInput.addEventListener('input', () => {
+        photoTitle.textContent = photoTitleInput.value;
+      });
+      card.appendChild(photoTitleField);
+
+      if (img) {
+        const zoom = getImageSetting(img, '--collage-zoom', 1);
+        const x = getImageSetting(img, '--collage-x', 50);
+        const y = getImageSetting(img, '--collage-y', 50);
+        const framing = document.createElement('div');
+        framing.className = 'collage-framing-controls';
+        framing.innerHTML = `
+          <label><span>Zoom <output>${Math.round(zoom * 100)}%</output></span><input type="range" min="1" max="3" step="0.05" value="${zoom}" data-setting="--collage-zoom"></label>
+          <label><span>Left / right <output>${Math.round(x)}%</output></span><input type="range" min="0" max="100" step="1" value="${x}" data-setting="--collage-x"></label>
+          <label><span>Up / down <output>${Math.round(y)}%</output></span><input type="range" min="0" max="100" step="1" value="${y}" data-setting="--collage-y"></label>
+        `;
+
+        framing.querySelectorAll('input').forEach(input => {
+          input.addEventListener('input', () => {
+            const suffix = input.dataset.setting === '--collage-zoom' ? '' : '%';
+            setImageSetting(img, input.dataset.setting, input.value, suffix);
+            input.closest('label').querySelector('output').textContent = input.dataset.setting === '--collage-zoom'
+              ? `${Math.round(parseFloat(input.value) * 100)}%`
+              : `${input.value}%`;
+          });
+        });
+        card.appendChild(framing);
+      }
+
+      const dragHandle = card.querySelector('.collage-photo-drag');
+      dragHandle.draggable = true;
+      dragHandle.addEventListener('dragstart', e => {
+        draggedSlot = slot;
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('dragging');
+      });
+      dragHandle.addEventListener('dragend', () => {
+        draggedSlot = null;
+        controls.querySelectorAll('.collage-photo-card').forEach(el => el.classList.remove('dragging', 'drag-over'));
+      });
+      card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('drag-over'); });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+      card.addEventListener('drop', e => {
+        e.preventDefault();
+        const from = state.slots.indexOf(draggedSlot);
+        if (from !== -1) moveSlot(from, index);
+      });
+
+      controls.appendChild(card);
+    });
+  }
+
+  const close = () => modal.remove();
+  modal.querySelector('.collage-builder-close').addEventListener('click', close);
+  modal.querySelector('.collage-builder-cancel').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+  modal.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  titleInput.addEventListener('input', () => {
+    state.title.textContent = titleInput.value;
+  });
+
+  applyBtn.addEventListener('click', () => {
+    const activeSlots = state.slots.slice(0, state.layout.count);
+    if (activeSlots.some(slot => !slot.querySelector('img'))) {
+      status.textContent = `Please upload all ${state.layout.count} photos before adding the collage.`;
       return;
     }
 
+    renderFrame();
+    state.title.textContent = state.layout.count > 1 ? titleInput.value.trim() : '';
+    const firstPhotoTitle = ensurePhotoTitle(activeSlots[0]).textContent.trim();
+    if (state.layout.count === 1) {
+      const img = activeSlots[0].querySelector('img');
+      img.alt = firstPhotoTitle || 'Hansje Görtz';
+      state.item.setAttribute('aria-label', firstPhotoTitle ? `Open photo: ${firstPhotoTitle}` : 'Open Hansje Görtz photo');
+    } else {
+      state.item.setAttribute('aria-label', state.title.textContent
+        ? `Open collage: ${state.title.textContent}`
+        : 'Open Hansje Görtz photo collage');
+    }
+
     const grid = document.querySelector('.photos-grid');
-    const count = grid.querySelectorAll('.photo-item').length;
-    const newItem = document.createElement('div');
-    newItem.className = 'photo-item';
-    newItem.dataset.index = count;
-
-    const img = document.createElement('img');
-    img.src = `images/${filename}`;
-    img.alt = 'Hansje Görtz';
-    img.loading = 'lazy';
-    newItem.appendChild(img);
-
     const addBtn = grid.querySelector('.editor-add-photo-btn');
-    grid.insertBefore(newItem, addBtn);
-    addPhotoItemControls(newItem, grid);
+    if (existingItem) existingItem.replaceWith(state.item);
+    else grid.insertBefore(state.item, addBtn);
 
-    setStatus('');
-    showToast('Photo uploaded ✓ — click Save & Deploy to go live');
-  } catch (err) {
-    showToast('Upload error: ' + err.message, 'error');
-    setStatus('');
-  }
+    grid.querySelectorAll('.photo-item').forEach((photo, index) => { photo.dataset.index = index; });
+    addPhotoItemControls(state.item, grid);
+    close();
+    showToast(existingItem ? 'Gallery item updated — click Save & Deploy to publish' : 'Gallery item added — click Save & Deploy to publish');
+  });
+
+  renderFrame();
+  renderControls();
+  document.body.appendChild(modal);
+  modal.querySelector('.collage-layout-option[aria-pressed="true"]').focus();
+}
+
+// ── PHOTO UPLOAD ───────────────────────────────────────────────────────────────
+async function uploadPhotoFile(file) {
+  const base64 = await fileToBase64(file);
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const filename = `${Date.now()}_${safeName}`;
+
+  const res = await fetchWithTimeout(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/images/${filename}`,
+    {
+      method: 'PUT',
+      cache: 'no-store',
+      headers: githubHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({
+        message: `Add photo: ${filename}`,
+        content: base64,
+        branch: GITHUB_BRANCH
+      })
+    }
+  );
+
+  if (!res.ok) throw new Error(await readGitHubError(res));
+  return `images/${filename}`;
 }
 
 // ── SAVE & DEPLOY ──────────────────────────────────────────────────────────────

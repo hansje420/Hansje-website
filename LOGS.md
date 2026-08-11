@@ -16,6 +16,24 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.9 — August 2026
+
+### Updates
+- **Gallery editor** — Unified single-photo and collage creation in one layout editor, including framing controls for single photos.
+- **Photo titles** — Added optional white Georgia titles to every individual photo while retaining the optional overall collage title.
+- **Framing controls** — Limited reordering to the dotted drag handle so zoom and position sliders respond normally.
+
+---
+
+## Version 1.8 — August 2026
+
+### Updates
+- **Gallery editor** — Added single-picture or 2–4 photo collage creation with ten arrangements, reordering, per-photo framing, titles, and reopening.
+- **Gallery display** — Standardized every desktop and mobile tile to one 4:5 size while preserving full-image viewing for single photos.
+- **Collages** — Added seamless no-gap tile and lightbox rendering with white Georgia title overlays.
+
+---
+
 ## Version 1.7 — July 2026
 
 ### Updates
