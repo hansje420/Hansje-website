@@ -1012,6 +1012,20 @@ a.showreel-note:hover { color: var(--color-champagne); }
   text-align: center;
   letter-spacing: 0.05em;
 }
+.form-privacy {
+  margin-top: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: rgba(240, 235, 228, 0.42);
+  text-align: center;
+  letter-spacing: 0.025em;
+}
+.form-privacy a {
+  color: var(--color-champagne);
+  border-bottom: 1px solid rgba(201, 169, 110, 0.35);
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.form-privacy a:hover { color: var(--color-champagne-light); border-color: currentColor; }
 
 .social-links {
   display: flex;
@@ -1058,6 +1072,12 @@ a.showreel-note:hover { color: var(--color-champagne); }
 }
 .footer-name { font-family: var(--font-display); font-size: 0.9rem; font-weight: 300; color: var(--color-text-light); }
 .footer-legal { font-family: var(--font-ui); font-size: 0.7rem; color: rgba(240, 235, 228, 0.25); }
+.footer-legal a {
+  color: rgba(240, 235, 228, 0.52);
+  border-bottom: 1px solid rgba(201, 169, 110, 0.25);
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.footer-legal a:hover { color: var(--color-champagne); border-color: currentColor; }
 .footer-back-top {
   font-family: var(--font-ui);
   font-size: 0.7rem;
@@ -1068,6 +1088,101 @@ a.showreel-note:hover { color: var(--color-champagne); }
   transition: opacity var(--transition-fast);
 }
 .footer-back-top:hover { opacity: 1; }
+
+
+/* 13A. PRIVACY PAGE
+   ============================================================ */
+.privacy-page { background: var(--color-cream); }
+.privacy-header {
+  position: relative;
+  background: var(--color-teal-dark);
+  border-bottom: 1px solid rgba(201, 169, 110, 0.2);
+}
+.privacy-header .header-inner { position: relative; }
+.privacy-home-link {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-champagne);
+  transition: color var(--transition-fast);
+}
+.privacy-home-link:hover { color: var(--color-champagne-light); }
+.privacy-main { min-height: calc(100vh - var(--header-height)); }
+.privacy-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(5rem, 12vw, 8.5rem) 0 clamp(3.5rem, 8vw, 6rem);
+  color: var(--color-text-light);
+  background: var(--color-teal-dark);
+}
+.privacy-hero .container { position: relative; z-index: 1; }
+.privacy-title {
+  max-width: 760px;
+  font-family: var(--font-display);
+  font-size: clamp(3.4rem, 9vw, 7.4rem);
+  font-weight: 300;
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+}
+.privacy-intro {
+  max-width: 620px;
+  margin-top: var(--space-lg);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  color: rgba(240, 235, 228, 0.72);
+}
+.privacy-updated {
+  margin-top: var(--space-lg);
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-champagne);
+}
+.privacy-content { padding-block: clamp(4rem, 10vw, 7rem); }
+.privacy-layout {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.32fr) minmax(0, 0.68fr);
+  gap: clamp(2.5rem, 8vw, 7rem);
+}
+.privacy-aside {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  line-height: 1.8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-mid);
+}
+.privacy-aside a {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  color: var(--color-teal);
+  border-bottom: 1px solid rgba(27, 92, 88, 0.3);
+}
+.privacy-copy { max-width: 720px; }
+.privacy-section + .privacy-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid rgba(28, 28, 26, 0.12);
+}
+.privacy-section h2 {
+  margin-bottom: 0.55rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--color-teal-dark);
+}
+.privacy-section p,
+.privacy-section li { color: var(--color-text-mid); }
+.privacy-section p + p,
+.privacy-section ul { margin-top: 0.8rem; }
+.privacy-section ul { list-style: disc; padding-left: 1.2rem; }
+.privacy-section a {
+  color: var(--color-teal);
+  border-bottom: 1px solid rgba(27, 92, 88, 0.3);
+}
+.privacy-page .footer-inner { justify-content: space-between; }
 
 
 /* 14. KEYFRAME ANIMATIONS
@@ -1133,4 +1248,6 @@ a.showreel-note:hover { color: var(--color-champagne); }
   .social-links { gap: var(--space-md); }
 
   .footer-inner { flex-direction: column; text-align: center; }
+  .privacy-layout { grid-template-columns: 1fr; gap: var(--space-lg); }
+  .privacy-aside { text-transform: none; letter-spacing: 0.04em; }
 }

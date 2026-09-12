@@ -16,6 +16,14 @@ Change `1.2` → `1.3` (or any new number) on each deploy. HTML itself is never 
 
 ---
 
+## Version 1.12 — September 2026
+
+### Privacy review
+- **Privacy notice** — Added a concise, brand-matched page explaining the contact form, hosting, embedded video, external links, retention, and visitor rights.
+- **Discreet links** — Added small privacy links below the contact form and in the footer.
+
+---
+
 ## Version 1.11 — August 2026
 
 ### Gallery captions
